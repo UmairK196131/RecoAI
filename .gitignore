@@ -1,0 +1,32 @@
+node_modules
+.DS_Store
+
+# Build outputs
+**/.cache
+**/build
+apps/web/public/build/
+apps/web/public/_dev
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Shopify CLI local state
+**/.shopify/*
+**/.shopify.lock
+
+# Extension build artifacts
+extensions/*/dist
+
+# Database (local dev)
+*.sqlite
+*.sqlite-journal
+
+# IDE
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# Temp scaffold (remove after setup)
+.tmp-scaffold

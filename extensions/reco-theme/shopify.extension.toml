@@ -1,0 +1,6 @@
+api_version = "2026-01"
+
+[[extensions]]
+name = "reco-theme"
+handle = "reco-theme"
+type = "theme"

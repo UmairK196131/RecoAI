@@ -1,0 +1,33 @@
+{
+  "name": "recoai",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19 <22 || >=22.12"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "extensions/*"
+  ],
+  "scripts": {
+    "build": "npm run db:generate && npm run build --workspace=apps/web",
+    "dev": "npm run dev --workspace=apps/web",
+    "lint": "npm run lint --workspace=apps/web",
+    "typecheck": "npm run typecheck --workspace=apps/web",
+    "db:generate": "npm run db:generate --workspace=packages/database",
+    "db:migrate": "npm run db:migrate --workspace=packages/database",
+    "db:migrate:dev": "npm run db:migrate:dev --workspace=packages/database",
+    "shopify": "shopify"
+  },
+  "devDependencies": {
+    "@shopify/cli": "4.6.0"
+  },
+  "overrides": {
+    "@graphql-tools/url-loader": "8.0.16",
+    "@graphql-codegen/client-preset": "4.7.0",
+    "@graphql-codegen/typescript-operations": "4.5.0",
+    "minimatch": "9.0.5",
+    "vite": "^6.2.2"
+  }
+}
