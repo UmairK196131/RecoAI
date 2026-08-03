@@ -62,6 +62,8 @@ model Shop {
   accessTokenEncrypted String     @map("access_token_encrypted")
   planTier             PlanTier   @default(free) @map("plan_tier")
   installedAt          DateTime   @default(now()) @map("installed_at")
+  uninstalledAt        DateTime?  @map("uninstalled_at")
+  purgeScheduledAt     DateTime?  @map("purge_scheduled_at")
   status               ShopStatus @default(active)
 
   products                 Product[]
