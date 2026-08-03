@@ -7,6 +7,7 @@ import {
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
 import { upsertShopFromSession } from "./services/shop.server";
+import { enqueueFullCatalogSync } from "./services/sync/enqueue.server";
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -23,8 +24,12 @@ const shopify = shopifyApp({
   },
   hooks: {
     afterAuth: async ({ session }) => {
-      await upsertShopFromSession(session);
+      const shop = await upsertShopFromSession(session);
       await shopify.registerWebhooks({ session });
+      await enqueueFullCatalogSync({
+        shopDomain: session.shop,
+        shopId: shop.id,
+      });
     },
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN

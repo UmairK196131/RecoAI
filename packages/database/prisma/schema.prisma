@@ -48,6 +48,15 @@ enum ShopStatus {
   @@map("shop_status")
 }
 
+enum CatalogSyncStatus {
+  pending
+  in_progress
+  completed
+  failed
+
+  @@map("catalog_sync_status")
+}
+
 enum PlanTier {
   free
   growth
@@ -65,6 +74,9 @@ model Shop {
   uninstalledAt        DateTime?  @map("uninstalled_at")
   purgeScheduledAt     DateTime?  @map("purge_scheduled_at")
   status               ShopStatus @default(active)
+  catalogSyncStatus    CatalogSyncStatus @default(pending) @map("catalog_sync_status")
+  lastCatalogSyncAt    DateTime?  @map("last_catalog_sync_at")
+  lastCatalogSyncError String?    @map("last_catalog_sync_error") @db.Text
 
   products                 Product[]
   collections              Collection[]

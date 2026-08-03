@@ -7,6 +7,7 @@ import {
 } from "@remix-run/node";
 import { isbot } from "isbot";
 import { addDocumentResponseHeaders } from "./shopify.server";
+import { ensureSyncWorkerStarted } from "./services/sync/worker.server";
 
 export const streamTimeout = 5000;
 
@@ -16,6 +17,7 @@ export default async function handleRequest(
   responseHeaders: Headers,
   remixContext: EntryContext
 ) {
+  ensureSyncWorkerStarted();
   addDocumentResponseHeaders(request, responseHeaders);
   const userAgent = request.headers.get("user-agent");
   const callbackName = isbot(userAgent ?? '')

@@ -25,6 +25,26 @@ api_version = "2026-01"
   uri = "/webhooks/app/scopes_update"
   topics = ["app/scopes_update"]
 
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/products/create"
+  topics = ["products/create"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/products/update"
+  topics = ["products/update"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/products/delete"
+  topics = ["products/delete"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/collections/update"
+  topics = ["collections/update"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/inventory_levels/update"
+  topics = ["inventory_levels/update"]
+
 [build]
 automatically_update_urls_on_dev = true
 include_config_on_deploy = true
