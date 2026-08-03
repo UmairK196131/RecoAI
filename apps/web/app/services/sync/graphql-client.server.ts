@@ -5,7 +5,10 @@ const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1000;
 
 interface GraphqlClientLike {
-  request(query: string, options?: { variables?: Record<string, unknown> }): Promise<unknown>;
+  graphql(
+    query: string,
+    options?: { variables?: Record<string, unknown> },
+  ): Promise<Response>;
 }
 
 interface GraphQLResponse<T> {
@@ -46,7 +49,8 @@ export async function graphqlRequest<T>(
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      const response = (await client.request(query, { variables })) as GraphQLResponse<T>;
+      const httpResponse = await client.graphql(query, { variables });
+      const response = (await httpResponse.json()) as GraphQLResponse<T>;
 
       if (response.errors?.length) {
         const throttled = response.errors.some((e) =>

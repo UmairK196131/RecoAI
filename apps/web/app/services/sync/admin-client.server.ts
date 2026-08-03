@@ -1,5 +1,5 @@
 import type { Session } from "@shopify/shopify-api";
-import shopify, { sessionStorage } from "../../shopify.server";
+import { sessionStorage, unauthenticated } from "../../shopify.server";
 
 export async function getOfflineSession(shopDomain: string): Promise<Session> {
   const sessions = await sessionStorage.findSessionsByShop(shopDomain);
@@ -11,6 +11,6 @@ export async function getOfflineSession(shopDomain: string): Promise<Session> {
 }
 
 export async function getAdminGraphqlClient(shopDomain: string) {
-  const session = await getOfflineSession(shopDomain);
-  return new shopify.api.clients.Graphql({ session });
+  const { admin } = await unauthenticated.admin(shopDomain);
+  return admin;
 }

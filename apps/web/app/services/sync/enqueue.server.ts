@@ -9,7 +9,7 @@ import type {
 } from "./types";
 
 function jobId(name: SyncJobName, key: string) {
-  return `${name}:${key}`;
+  return `${name}--${key.replace(/:/g, "-")}`;
 }
 
 export async function enqueueFullCatalogSync(data: FullCatalogSyncJobData) {

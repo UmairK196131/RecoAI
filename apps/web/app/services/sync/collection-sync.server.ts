@@ -98,7 +98,12 @@ export async function fetchAndUpsertCollection(
   shopId: string,
   shopDomain: string,
   shopifyCollectionId: string,
-  client: { request: (query: string, options?: { variables?: Record<string, unknown> }) => Promise<unknown> },
+  client: {
+    graphql: (
+      query: string,
+      options?: { variables?: Record<string, unknown> },
+    ) => Promise<Response>;
+  },
 ) {
   const { graphqlRequest } = await import("./graphql-client.server");
   const data = await graphqlRequest<{ collection: ShopifyCollectionNode | null }>(

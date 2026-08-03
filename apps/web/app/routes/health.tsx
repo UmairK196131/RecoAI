@@ -1,7 +1,9 @@
 import { json } from "@remix-run/node";
 import db from "../db.server";
+import { ensureSyncWorkerStarted } from "../services/sync/worker.server";
 
 export const loader = async () => {
+  ensureSyncWorkerStarted();
   try {
     await db.$queryRaw`SELECT 1`;
     return json({

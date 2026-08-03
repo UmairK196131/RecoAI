@@ -22,7 +22,12 @@ export async function updateInventoryFromWebhook(
   shopDomain: string,
   inventoryItemId: string,
   available: number,
-  client: { request: (query: string, options?: { variables?: Record<string, unknown> }) => Promise<unknown> },
+  client: {
+    graphql: (
+      query: string,
+      options?: { variables?: Record<string, unknown> },
+    ) => Promise<Response>;
+  },
 ) {
   const { graphqlRequest } = await import("./graphql-client.server");
   const data = await graphqlRequest<{
