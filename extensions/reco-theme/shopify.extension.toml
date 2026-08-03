@@ -3,4 +3,6 @@ api_version = "2026-01"
 [[extensions]]
 name = "reco-theme"
 handle = "reco-theme"
+
+uid = "1532b061-1ad1-03f5-e751-cacbf6a91f9c0e3c91a5"
 type = "theme"

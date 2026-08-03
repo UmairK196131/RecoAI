@@ -1,7 +1,12 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { vitePlugin as remix } from "@remix-run/dev";
 import { installGlobals } from "@remix-run/node";
 import { defineConfig, type UserConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+
+const appDir = path.dirname(fileURLToPath(import.meta.url));
+const monorepoRoot = path.resolve(appDir, "../..");
 
 installGlobals({ nativeFetch: true });
 
@@ -11,7 +16,8 @@ installGlobals({ nativeFetch: true });
 if (
   process.env.HOST &&
   (!process.env.SHOPIFY_APP_URL ||
-    process.env.SHOPIFY_APP_URL === process.env.HOST)
+    process.env.SHOPIFY_APP_URL === process.env.HOST ||
+    process.env.SHOPIFY_APP_URL === "https://example.com")
 ) {
   process.env.SHOPIFY_APP_URL = process.env.HOST;
   delete process.env.HOST;
@@ -38,6 +44,7 @@ if (host === "localhost") {
 }
 
 export default defineConfig({
+  envDir: monorepoRoot,
   server: {
     allowedHosts: [host],
     cors: {
