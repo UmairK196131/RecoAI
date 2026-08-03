@@ -12,4 +12,10 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export { PrismaClient };
+export { encryptField, decryptField } from "./encryption.js";
+export {
+  createShopScopedClient,
+  exampleShopScopedQuery,
+  type ShopScopedClient,
+} from "./tenant.js";
 export default prisma;

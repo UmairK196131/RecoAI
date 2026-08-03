@@ -18,6 +18,7 @@
     "db:generate": "dotenv -e .env -- npm run db:generate --workspace=packages/database",
     "db:migrate": "dotenv -e .env -- npm run db:migrate --workspace=packages/database",
     "db:migrate:dev": "dotenv -e .env -- npm run db:migrate:dev --workspace=packages/database",
+    "db:seed": "dotenv -e .env -- npm run db:seed --workspace=packages/database",
     "shopify": "shopify"
   },
   "devDependencies": {

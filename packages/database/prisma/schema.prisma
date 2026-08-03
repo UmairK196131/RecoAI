@@ -1,14 +1,20 @@
-// RecoAI database schema — PostgreSQL with pgvector (enabled via docker-compose)
-// Sprint 1: Session model placeholder for Shopify OAuth; domain models added in later sprints.
+// RecoAI database schema — PostgreSQL with pgvector
+// SRS Section 6 entities + Shopify OAuth Session model
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
+
+// ---------------------------------------------------------------------------
+// Shopify OAuth session storage (required by @shopify/shopify-app-session-storage-prisma)
+// ---------------------------------------------------------------------------
 
 model Session {
   id                  String    @id
@@ -28,4 +34,297 @@ model Session {
   emailVerified       Boolean?  @default(false)
   refreshToken        String?
   refreshTokenExpires DateTime?
+}
+
+// ---------------------------------------------------------------------------
+// Core domain entities (SRS Section 6)
+// ---------------------------------------------------------------------------
+
+enum ShopStatus {
+  active
+  uninstalled
+  suspended
+
+  @@map("shop_status")
+}
+
+enum PlanTier {
+  free
+  growth
+  pro
+
+  @@map("plan_tier")
+}
+
+model Shop {
+  id                   String     @id @default(cuid())
+  shopifyDomain        String     @unique @map("shopify_domain")
+  accessTokenEncrypted String     @map("access_token_encrypted")
+  planTier             PlanTier   @default(free) @map("plan_tier")
+  installedAt          DateTime   @default(now()) @map("installed_at")
+  status               ShopStatus @default(active)
+
+  products                 Product[]
+  collections              Collection[]
+  customers                Customer[]
+  behavioralEvents         BehavioralEvent[]
+  orders                   Order[]
+  recommendationPlacements RecommendationPlacement[]
+  recommendationLogs       RecommendationLog[]
+  productEmbeddings        ProductEmbedding[]
+  abTestExperiments        ABTestExperiment[]
+
+  @@index([status])
+  @@map("shops")
+}
+
+enum ProductStatus {
+  active
+  draft
+  archived
+
+  @@map("product_status")
+}
+
+enum InventoryStatus {
+  in_stock
+  out_of_stock
+  low_stock
+
+  @@map("inventory_status")
+}
+
+model Product {
+  id               String          @id @default(cuid())
+  shopifyProductId String          @map("shopify_product_id")
+  shopId           String          @map("shop_id")
+  title            String
+  description      String?         @db.Text
+  tags             String[]        @default([])
+  productType      String?         @map("product_type")
+  vendor           String?
+  priceRangeMin    Decimal?        @map("price_range_min") @db.Decimal(12, 2)
+  priceRangeMax    Decimal?        @map("price_range_max") @db.Decimal(12, 2)
+  imageUrls        String[]        @default([]) @map("image_urls")
+  status           ProductStatus   @default(active)
+  inventoryStatus  InventoryStatus @default(in_stock) @map("inventory_status")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  shop              Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  variants          ProductVariant[]
+  behavioralEvents  BehavioralEvent[]
+  embedding         ProductEmbedding?
+
+  @@unique([shopId, shopifyProductId])
+  @@index([shopId])
+  @@index([shopId, status])
+  @@map("products")
+}
+
+model ProductVariant {
+  id                String   @id @default(cuid())
+  shopifyVariantId  String   @map("shopify_variant_id")
+  productId         String   @map("product_id")
+  price             Decimal  @db.Decimal(12, 2)
+  sku               String?
+  inventoryQty      Int      @default(0) @map("inventory_qty")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, shopifyVariantId])
+  @@index([productId])
+  @@map("product_variants")
+}
+
+model Collection {
+  id                   String   @id @default(cuid())
+  shopifyCollectionId  String   @map("shopify_collection_id")
+  shopId               String   @map("shop_id")
+  title                String
+  productIds           String[] @default([]) @map("product_ids")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, shopifyCollectionId])
+  @@index([shopId])
+  @@map("collections")
+}
+
+model Customer {
+  id                 String   @id @default(cuid())
+  shopifyCustomerId  String?  @map("shopify_customer_id")
+  shopId             String   @map("shop_id")
+  sessionIds         String[] @default([]) @map("session_ids")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  shop             Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  behavioralEvents BehavioralEvent[]
+  orders           Order[]
+
+  @@index([shopId])
+  @@index([shopId, shopifyCustomerId])
+  @@map("customers")
+}
+
+enum BehavioralEventType {
+  product_view
+  collection_view
+  search
+  add_to_cart
+  remove_from_cart
+  checkout_start
+  purchase
+  recommendation_impression
+  recommendation_click
+
+  @@map("behavioral_event_type")
+}
+
+model BehavioralEvent {
+  id         String              @id @default(cuid())
+  shopId     String              @map("shop_id")
+  sessionId  String              @map("session_id")
+  customerId String?             @map("customer_id")
+  eventType  BehavioralEventType @map("event_type")
+  productId  String?             @map("product_id")
+  timestamp  DateTime            @default(now())
+  metadata   Json                @default("{}")
+
+  shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  product  Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([shopId])
+  @@index([shopId, timestamp])
+  @@index([shopId, eventType, timestamp])
+  @@index([shopId, sessionId])
+  @@map("behavioral_events")
+}
+
+model Order {
+  id              String   @id @default(cuid())
+  shopifyOrderId  String   @map("shopify_order_id")
+  shopId          String   @map("shop_id")
+  customerId      String?  @map("customer_id")
+  lineItems       Json     @default("[]") @map("line_items")
+  totalPrice      Decimal  @map("total_price") @db.Decimal(12, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@unique([shopId, shopifyOrderId])
+  @@index([shopId])
+  @@index([shopId, createdAt])
+  @@map("orders")
+}
+
+enum PlacementType {
+  product_page
+  cart
+  home
+  collection
+  search
+
+  @@map("placement_type")
+}
+
+enum RecommendationStrategy {
+  collaborative_filtering
+  content_similarity
+  association_rules
+  trending
+  recently_viewed
+  personalized_blend
+
+  @@map("recommendation_strategy")
+}
+
+model RecommendationPlacement {
+  id              String                 @id @default(cuid())
+  shopId          String                 @map("shop_id")
+  placementType   PlacementType          @map("placement_type")
+  strategy        RecommendationStrategy
+  enabled         Boolean                @default(false)
+  maxItems        Int                    @default(4) @map("max_items")
+  titleText       String                 @default("You may also like") @map("title_text")
+  styleConfig     Json                   @default("{}") @map("style_config")
+  exclusionRules  Json                   @default("{}") @map("exclusion_rules")
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+
+  shop              Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  recommendationLogs RecommendationLog[]
+  abTestExperiments  ABTestExperiment[]
+
+  @@index([shopId])
+  @@index([shopId, enabled])
+  @@map("recommendation_placements")
+}
+
+model RecommendationLog {
+  id                String    @id @default(cuid())
+  shopId            String    @map("shop_id")
+  placementId       String    @map("placement_id")
+  sessionId         String    @map("session_id")
+  shownProductIds   String[]  @default([]) @map("shown_product_ids")
+  clickedProductId  String?   @map("clicked_product_id")
+  impressionAt      DateTime  @default(now()) @map("impression_at")
+  clickAt           DateTime? @map("click_at")
+  converted         Boolean   @default(false)
+  attributedOrderId String?   @map("attributed_order_id")
+
+  shop      Shop                    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  placement RecommendationPlacement @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([shopId, impressionAt])
+  @@index([shopId, placementId, impressionAt])
+  @@map("recommendation_logs")
+}
+
+model ProductEmbedding {
+  productId       String                      @id @map("product_id")
+  shopId          String                      @map("shop_id")
+  embeddingVector Unsupported("vector(384)")? @map("embedding_vector")
+  modelVersion    String                      @map("model_version")
+  updatedAt       DateTime                    @updatedAt @map("updated_at")
+
+  shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@map("product_embeddings")
+}
+
+enum ABTestStatus {
+  draft
+  running
+  paused
+  completed
+
+  @@map("ab_test_status")
+}
+
+model ABTestExperiment {
+  id             String       @id @default(cuid())
+  shopId         String       @map("shop_id")
+  placementId    String       @map("placement_id")
+  variantConfigs Json         @default("[]") @map("variant_configs")
+  startDate      DateTime?    @map("start_date")
+  endDate        DateTime?    @map("end_date")
+  status         ABTestStatus @default(draft)
+
+  shop      Shop                    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  placement RecommendationPlacement @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([shopId, status])
+  @@map("ab_test_experiments")
 }
