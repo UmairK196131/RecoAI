@@ -1,5 +1,3 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
-
 import prisma from "./index.js";
 
 /** Models that carry a direct `shopId` column and require tenant isolation. */
@@ -14,8 +12,6 @@ const SHOP_SCOPED_MODELS = [
   "ProductEmbedding",
   "ABTestExperiment",
 ] as const;
-
-type ShopScopedModel = (typeof SHOP_SCOPED_MODELS)[number];
 
 function injectShopId<T extends { where?: Record<string, unknown> }>(
   shopId: string,
@@ -70,9 +66,10 @@ export function createShopScopedClient(shopId: string) {
     {} as Record<string, Record<string, unknown>>,
   );
 
+  // Dynamic model keys are built at runtime; cast is required for Prisma's strict extension types.
   return prisma.$extends({
-    query: queryExtension as Prisma.Extension["query"],
-  });
+    query: queryExtension,
+  } as Parameters<typeof prisma.$extends>[0]) as unknown as typeof prisma;
 }
 
 export type ShopScopedClient = ReturnType<typeof createShopScopedClient>;
@@ -81,11 +78,8 @@ export type ShopScopedClient = ReturnType<typeof createShopScopedClient>;
  * Example: fetch active products for a shop using the tenant-scoped client.
  * Demonstrates NFR-SEC-05 enforcement at the query layer.
  */
-export async function exampleShopScopedQuery(
-  shopId: string,
-  client: PrismaClient | ShopScopedClient = prisma,
-) {
-  const db = "product" in client ? client : createShopScopedClient(shopId);
+export async function exampleShopScopedQuery(shopId: string) {
+  const db = createShopScopedClient(shopId);
   return db.product.findMany({
     where: { status: "active" },
     take: 10,
