@@ -45,6 +45,38 @@ api_version = "2026-01"
   uri = "/webhooks/inventory_levels/update"
   topics = ["inventory_levels/update"]
 
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/orders/create"
+  topics = ["orders/create"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/orders/updated"
+  topics = ["orders/updated"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/orders/paid"
+  topics = ["orders/paid"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/create"
+  topics = ["customers/create"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/update"
+  topics = ["customers/update"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/data_request"
+  compliance_topics = ["customers/data_request"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/redact"
+  compliance_topics = ["customers/redact"]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/shop/redact"
+  compliance_topics = ["shop/redact"]
+
 [build]
 automatically_update_urls_on_dev = true
 include_config_on_deploy = true

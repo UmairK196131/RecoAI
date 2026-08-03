@@ -2,7 +2,7 @@ import db from "../../db.server";
 import { logSyncEvent } from "../logger.server";
 import { extractShopifyId } from "./product-sync.server";
 
-interface ShopifyCollectionNode {
+export interface ShopifyCollectionNode {
   id: string;
   title: string;
   products?: { edges: Array<{ node: { id: string } }> };

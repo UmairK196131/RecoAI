@@ -77,6 +77,8 @@ model Shop {
   catalogSyncStatus    CatalogSyncStatus @default(pending) @map("catalog_sync_status")
   lastCatalogSyncAt    DateTime?  @map("last_catalog_sync_at")
   lastCatalogSyncError String?    @map("last_catalog_sync_error") @db.Text
+  lastOrderSyncAt      DateTime?  @map("last_order_sync")
+  lastReconciliationAt DateTime?  @map("last_reconciliation")
 
   products                 Product[]
   collections              Collection[]
@@ -182,7 +184,7 @@ model Customer {
   orders           Order[]
 
   @@index([shopId])
-  @@index([shopId, shopifyCustomerId])
+  @@unique([shopId, shopifyCustomerId])
   @@map("customers")
 }
 

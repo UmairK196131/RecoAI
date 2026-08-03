@@ -8,6 +8,8 @@ export async function getSyncStatus(shopDomain: string) {
       catalogSyncStatus: true,
       lastCatalogSyncAt: true,
       lastCatalogSyncError: true,
+      lastOrderSyncAt: true,
+      lastReconciliationAt: true,
     },
   });
 
@@ -15,20 +17,24 @@ export async function getSyncStatus(shopDomain: string) {
     return null;
   }
 
-  const [productCount, collectionCount, variantCount] = await Promise.all([
+  const [productCount, collectionCount, variantCount, orderCount] = await Promise.all([
     db.product.count({ where: { shopId: shop.id } }),
     db.collection.count({ where: { shopId: shop.id } }),
     db.productVariant.count({
       where: { product: { shopId: shop.id } },
     }),
+    db.order.count({ where: { shopId: shop.id } }),
   ]);
 
   return {
     status: shop.catalogSyncStatus,
     lastSyncAt: shop.lastCatalogSyncAt?.toISOString() ?? null,
+    lastOrderSyncAt: shop.lastOrderSyncAt?.toISOString() ?? null,
+    lastReconciliationAt: shop.lastReconciliationAt?.toISOString() ?? null,
     productCount,
     collectionCount,
     variantCount,
+    orderCount,
     error: shop.lastCatalogSyncError,
   };
 }

@@ -3,7 +3,14 @@ export type SyncJobName =
   | "product-upsert"
   | "product-delete"
   | "collection-upsert"
-  | "inventory-update";
+  | "inventory-update"
+  | "order-upsert"
+  | "customer-upsert"
+  | "gdpr-data-request"
+  | "gdpr-customer-redact"
+  | "gdpr-shop-redact"
+  | "nightly-reconciliation"
+  | "shop-purge";
 
 export interface FullCatalogSyncJobData {
   shopDomain: string;
@@ -37,12 +44,48 @@ export interface InventoryUpdateJobData {
   available: number;
 }
 
+export interface OrderUpsertJobData {
+  shopDomain: string;
+  shopId: string;
+  shopifyOrderId: string;
+  payload: Record<string, unknown>;
+}
+
+export interface CustomerUpsertJobData {
+  shopDomain: string;
+  shopId: string;
+  shopifyCustomerId: string;
+  payload: Record<string, unknown>;
+}
+
+export interface GdprDataRequestJobData {
+  shopDomain: string;
+  shopId: string;
+  payload: Record<string, unknown>;
+}
+
+export interface GdprCustomerRedactJobData {
+  shopDomain: string;
+  shopId: string;
+  payload: Record<string, unknown>;
+}
+
+export interface GdprShopRedactJobData {
+  shopDomain: string;
+  payload: Record<string, unknown>;
+}
+
 export type SyncJobData =
   | FullCatalogSyncJobData
   | ProductUpsertJobData
   | ProductDeleteJobData
   | CollectionUpsertJobData
-  | InventoryUpdateJobData;
+  | InventoryUpdateJobData
+  | OrderUpsertJobData
+  | CustomerUpsertJobData
+  | GdprDataRequestJobData
+  | GdprCustomerRedactJobData
+  | GdprShopRedactJobData;
 
 export interface GraphQLThrottleStatus {
   maximumAvailable: number;

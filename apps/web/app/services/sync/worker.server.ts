@@ -2,17 +2,30 @@ import { Worker, type Job } from "bullmq";
 import { getRedisConnectionOptions, SYNC_QUEUE_NAME } from "../queue.server";
 import { logSyncEvent } from "../logger.server";
 import { runFullCatalogSync } from "./full-sync.server";
+import { runNightlyReconciliation } from "./reconciliation.server";
+import { runScheduledShopPurge } from "./purge.server";
+import { ensureCronJobsScheduled } from "./cron.server";
 import type {
   CollectionUpsertJobData,
+  CustomerUpsertJobData,
   FullCatalogSyncJobData,
+  GdprCustomerRedactJobData,
+  GdprDataRequestJobData,
+  GdprShopRedactJobData,
   InventoryUpdateJobData,
+  OrderUpsertJobData,
   ProductDeleteJobData,
   ProductUpsertJobData,
   SyncJobName,
 } from "./types";
 import {
   handleCollectionUpsert,
+  handleCustomerUpsert,
+  handleGdprCustomerRedact,
+  handleGdprDataRequest,
+  handleGdprShopRedact,
   handleInventoryUpdate,
+  handleOrderUpsert,
   handleProductDelete,
   handleProductUpsert,
 } from "./webhook-handlers.server";
@@ -46,6 +59,20 @@ async function processJob(job: Job) {
       return handleCollectionUpsert(job.data as CollectionUpsertJobData);
     case "inventory-update":
       return handleInventoryUpdate(job.data as InventoryUpdateJobData);
+    case "order-upsert":
+      return handleOrderUpsert(job.data as OrderUpsertJobData);
+    case "customer-upsert":
+      return handleCustomerUpsert(job.data as CustomerUpsertJobData);
+    case "gdpr-data-request":
+      return handleGdprDataRequest(job.data as GdprDataRequestJobData);
+    case "gdpr-customer-redact":
+      return handleGdprCustomerRedact(job.data as GdprCustomerRedactJobData);
+    case "gdpr-shop-redact":
+      return handleGdprShopRedact(job.data as GdprShopRedactJobData);
+    case "nightly-reconciliation":
+      return runNightlyReconciliation();
+    case "shop-purge":
+      return runScheduledShopPurge();
     default:
       throw new Error(`Unknown sync job: ${name}`);
   }
@@ -57,6 +84,8 @@ export function ensureSyncWorkerStarted() {
   }
 
   global.__recoaiSyncWorkerStarted = true;
+
+  void ensureCronJobsScheduled();
 
   const worker = new Worker(SYNC_QUEUE_NAME, processJob, {
     connection: getRedisConnectionOptions(),

@@ -30,7 +30,7 @@ interface ShopifyVariant {
   inventoryQuantity?: number | null;
 }
 
-interface ShopifyProductNode {
+export interface ShopifyProductNode {
   id: string;
   title: string;
   description?: string | null;

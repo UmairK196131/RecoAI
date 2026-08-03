@@ -6,6 +6,10 @@ import db from "../db.server";
 export const PURGE_DELAY_HOURS = 48;
 
 export async function upsertShopFromSession(session: Session) {
+  if (!session.accessToken) {
+    throw new Error(`Missing access token for shop ${session.shop}`);
+  }
+
   const accessTokenEncrypted = encryptField(session.accessToken);
 
   return db.shop.upsert({

@@ -2,8 +2,8 @@ import db from "../../db.server";
 import { logSyncEvent } from "../logger.server";
 import { getAdminGraphqlClient } from "./admin-client.server";
 import { graphqlRequest } from "./graphql-client.server";
-import { upsertCollectionFromNode } from "./collection-sync.server";
-import { upsertProductFromNode } from "./product-sync.server";
+import { upsertCollectionFromNode, type ShopifyCollectionNode } from "./collection-sync.server";
+import { upsertProductFromNode, type ShopifyProductNode } from "./product-sync.server";
 
 const PRODUCTS_QUERY = `#graphql
   query Products($cursor: String) {
@@ -63,6 +63,20 @@ const COLLECTIONS_QUERY = `#graphql
   }
 `;
 
+type ProductsPageResult = {
+  products: {
+    pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    edges: Array<{ node: ShopifyProductNode }>;
+  };
+};
+
+type CollectionsPageResult = {
+  collections: {
+    pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    edges: Array<{ node: ShopifyCollectionNode }>;
+  };
+};
+
 export async function runFullCatalogSync(shopId: string, shopDomain: string) {
   logSyncEvent({
     event: "full_sync_started",
@@ -87,12 +101,7 @@ export async function runFullCatalogSync(shopId: string, shopDomain: string) {
     let hasMoreProducts = true;
 
     while (hasMoreProducts) {
-      const data = await graphqlRequest<{
-        products: {
-          pageInfo: { hasNextPage: boolean; endCursor: string | null };
-          edges: Array<{ node: Parameters<typeof upsertProductFromNode>[1] }>;
-        };
-      }>(
+      const data: ProductsPageResult = await graphqlRequest<ProductsPageResult>(
         client,
         PRODUCTS_QUERY,
         { cursor: productCursor },
@@ -112,12 +121,7 @@ export async function runFullCatalogSync(shopId: string, shopDomain: string) {
     let hasMoreCollections = true;
 
     while (hasMoreCollections) {
-      const data = await graphqlRequest<{
-        collections: {
-          pageInfo: { hasNextPage: boolean; endCursor: string | null };
-          edges: Array<{ node: Parameters<typeof upsertCollectionFromNode>[1] }>;
-        };
-      }>(
+      const data: CollectionsPageResult = await graphqlRequest<CollectionsPageResult>(
         client,
         COLLECTIONS_QUERY,
         { cursor: collectionCursor },
