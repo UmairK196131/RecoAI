@@ -13,12 +13,14 @@
   "scripts": {
     "build": "npm run db:generate && npm run build --workspace=apps/web",
     "dev": "npm run dev --workspace=apps/web",
+    "dev:lite": "npm run dev:lite --workspace=apps/web",
     "lint": "npm run lint --workspace=apps/web",
     "typecheck": "npm run typecheck --workspace=apps/web",
     "db:generate": "dotenv -e .env -- npm run db:generate --workspace=packages/database",
     "db:migrate": "dotenv -e .env -- npm run db:migrate --workspace=packages/database",
     "db:migrate:dev": "dotenv -e .env -- npm run db:migrate:dev --workspace=packages/database",
     "db:seed": "dotenv -e .env -- npm run db:seed --workspace=packages/database",
+    "test:sprint-5": "dotenv -e .env -- npx tsx apps/web/scripts/test-sprint-5.ts",
     "shopify": "shopify"
   },
   "devDependencies": {
