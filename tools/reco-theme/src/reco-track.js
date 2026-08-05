@@ -217,25 +217,34 @@
       events: batch,
     });
 
-    var sent = false;
-    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
-      try {
-        sent = navigator.sendBeacon(endpoint, new Blob([payload], { type: "application/json" }));
-      } catch (e) {
-        sent = false;
-      }
-    }
-
-    if (!sent && typeof fetch === "function") {
+    if (typeof fetch === "function") {
       fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: payload,
         keepalive: true,
+        mode: "cors",
         credentials: "omit",
       }).catch(function () {
-        queue = batch.concat(queue);
+        if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+          try {
+            navigator.sendBeacon(endpoint, new Blob([payload], { type: "application/json" }));
+          } catch (e) {
+            queue = batch.concat(queue);
+          }
+        } else {
+          queue = batch.concat(queue);
+        }
       });
+      return;
+    }
+
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      try {
+        navigator.sendBeacon(endpoint, new Blob([payload], { type: "application/json" }));
+      } catch (e) {
+        queue = batch.concat(queue);
+      }
     }
   }
 

@@ -45,12 +45,12 @@ function jsonWithCors(
   data: unknown,
   init: ResponseInit & { corsHeaders?: HeadersInit },
 ) {
-  const headers = new Headers(init.headers);
-  const corsHeaders = init.corsHeaders ?? {};
+  const { corsHeaders = {}, ...responseInit } = init;
+  const headers = new Headers(responseInit.headers);
   for (const [key, value] of Object.entries(corsHeaders)) {
     headers.set(key, value);
   }
-  return json(data, { ...init, headers });
+  return json(data, { ...responseInit, headers });
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -75,40 +75,56 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return jsonWithCors({ error: "Method not allowed" }, { status: 405, corsHeaders });
   }
 
-  let body: unknown;
+  let shopDomain: string | null = null;
+
   try {
-    body = await request.json();
-  } catch {
-    return jsonWithCors(
-      { ok: false, error: "invalid_json", message: "Invalid JSON body" },
-      { status: 400, corsHeaders },
-    );
-  }
-
-  const shopDomain =
-    body && typeof body === "object" && "shop" in body && typeof (body as { shop: unknown }).shop === "string"
-      ? (body as { shop: string }).shop.toLowerCase()
-      : null;
-
-  const responseCors = buildCorsHeaders(request, shopDomain);
-
-  const result = await ingestBehavioralEvents(body);
-
-  if (!result.ok) {
-    const status =
-      result.error === "rate_limited"
-        ? 429
-        : result.error === "shop_not_found" || result.error === "shop_inactive"
-          ? 404
-          : 400;
-
-    const headers: HeadersInit = { ...responseCors };
-    if (result.retryAfterSec) {
-      (headers as Record<string, string>)["Retry-After"] = String(result.retryAfterSec);
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonWithCors(
+        { ok: false, error: "invalid_json", message: "Invalid JSON body" },
+        { status: 400, corsHeaders },
+      );
     }
 
-    return jsonWithCors(result, { status, corsHeaders: headers });
-  }
+    shopDomain =
+      body && typeof body === "object" && "shop" in body && typeof (body as { shop: unknown }).shop === "string"
+        ? (body as { shop: string }).shop.toLowerCase()
+        : null;
 
-  return jsonWithCors(result, { status: 201, corsHeaders: responseCors });
+    const responseCors = buildCorsHeaders(request, shopDomain);
+
+    const result = await ingestBehavioralEvents(body);
+
+    if (!result.ok) {
+      const status =
+        result.error === "rate_limited"
+          ? 429
+          : result.error === "shop_not_found" || result.error === "shop_inactive"
+            ? 404
+            : 400;
+
+      const headers: HeadersInit = { ...responseCors };
+      if (result.retryAfterSec) {
+        (headers as Record<string, string>)["Retry-After"] = String(result.retryAfterSec);
+      }
+
+      return jsonWithCors(result, { status, corsHeaders: headers });
+    }
+
+    return jsonWithCors(result, { status: 201, corsHeaders: responseCors });
+  } catch (error) {
+    const responseCors = buildCorsHeaders(request, shopDomain);
+    console.error(
+      JSON.stringify({
+        event: "events_ingestion_error",
+        error: error instanceof Error ? error.message : "unknown",
+      }),
+    );
+    return jsonWithCors(
+      { ok: false, error: "server_error", message: "Internal server error" },
+      { status: 500, corsHeaders: responseCors },
+    );
+  }
 };
