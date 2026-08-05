@@ -11,7 +11,7 @@
     "extensions/*"
   ],
   "scripts": {
-    "build": "npm run db:generate && npm run build --workspace=apps/web",
+    "build": "npm run db:generate && npm run build --workspace=reco-theme && npm run build --workspace=apps/web",
     "dev": "npm run dev --workspace=apps/web",
     "dev:lite": "npm run dev:lite --workspace=apps/web",
     "lint": "npm run lint --workspace=apps/web",

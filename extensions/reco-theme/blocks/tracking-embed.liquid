@@ -1,0 +1,29 @@
+{% if block.settings.enabled %}
+  <script>
+    window.__recoai = {
+      shop: {{ shop.permanent_domain | json }},
+      customerId: {% if customer %}{{ customer.id | json }}{% else %}null{% endif %},
+      pageType: {{ request.page_type | json }},
+      productId: {% if product %}{{ product.id | json }}{% else %}null{% endif %},
+      collectionId: {% if collection %}{{ collection.id | json }}{% else %}null{% endif %},
+      searchQuery: {{ search.terms | default: '' | json }},
+      orderId: {% if order %}{{ order.id | json }}{% else %}null{% endif %}
+    };
+  </script>
+  <script src="{{ 'reco-track.js' | asset_url }}" defer></script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "t:tracking_embed.name",
+  "target": "head",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enabled",
+      "label": "t:tracking_embed.settings.enabled.label",
+      "default": true
+    }
+  ]
+}
+{% endschema %}
