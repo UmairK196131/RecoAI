@@ -11,7 +11,8 @@
     "extensions/*"
   ],
   "scripts": {
-    "build": "npm run db:generate && npm run build --workspace=reco-theme && npm run build --workspace=apps/web",
+    "build": "npm run db:generate && npm run build:extension && npm run build --workspace=apps/web",
+    "build:extension": "node tools/reco-theme/build.mjs",
     "dev": "npm run dev --workspace=apps/web",
     "dev:lite": "npm run dev:lite --workspace=apps/web",
     "lint": "npm run lint --workspace=apps/web",
@@ -25,7 +26,8 @@
   },
   "devDependencies": {
     "@shopify/cli": "4.6.0",
-    "dotenv-cli": "^8.0.0"
+    "dotenv-cli": "^8.0.0",
+    "esbuild": "^0.25.12"
   },
   "overrides": {
     "@graphql-tools/url-loader": "8.0.16",

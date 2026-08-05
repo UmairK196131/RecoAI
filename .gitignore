@@ -18,6 +18,7 @@ apps/web/public/_dev
 
 # Extension build artifacts
 extensions/*/dist
+extensions/*/node_modules
 
 # Database (local dev)
 *.sqlite

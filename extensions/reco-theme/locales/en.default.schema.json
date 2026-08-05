@@ -1,0 +1,10 @@
+{
+  "tracking_embed": {
+    "name": "RecoAI Tracking",
+    "settings": {
+      "enabled": {
+        "label": "Enable RecoAI behavioral tracking"
+      }
+    }
+  }
+}
