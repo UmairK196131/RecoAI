@@ -1,6 +1,6 @@
 /**
  * RecoAI storefront tracking script (vanilla JS, no dependencies).
- * Captures behavioral events and logs them in dev; batch POST added in Sprint 7.
+ * Batches events and POSTs to /api/events; respects Shopify Customer Privacy API.
  */
 (function () {
   "use strict";
@@ -10,7 +10,30 @@
 
   var SESSION_KEY = "recoai_sid";
   var SESSION_MAX_AGE = 60 * 60 * 24 * 30;
+  var BATCH_SIZE = 10;
+  var FLUSH_INTERVAL_MS = 5000;
+
+  var ANALYTICS_EVENTS = {
+    product_view: true,
+    collection_view: true,
+    search: true,
+    add_to_cart: true,
+    remove_from_cart: true,
+    checkout_start: true,
+    purchase: true,
+    recommendation_impression: true,
+  };
+
+  var MARKETING_EVENTS = {
+    recommendation_click: true,
+  };
+
   var queue = [];
+  var flushTimer = null;
+  var sessionId = null;
+  var consentReady = false;
+  var analyticsAllowed = false;
+  var marketingAllowed = false;
 
   function uuid() {
     if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -41,7 +64,21 @@
       secure;
   }
 
-  function getSessionId() {
+  function clearSessionStorage() {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch (e) {
+      /* localStorage unavailable */
+    }
+    document.cookie = SESSION_KEY + "=; path=/; max-age=0; SameSite=Lax";
+    sessionId = null;
+  }
+
+  function ensureSessionId() {
+    if (!analyticsAllowed) return null;
+
+    if (sessionId) return sessionId;
+
     var id = readCookie(SESSION_KEY);
     if (!id) {
       try {
@@ -53,30 +90,185 @@
     if (!id) {
       id = uuid();
     }
+
     writeCookie(SESSION_KEY, id, SESSION_MAX_AGE);
     try {
       localStorage.setItem(SESSION_KEY, id);
     } catch (e) {
       /* localStorage unavailable */
     }
-    return id;
+
+    sessionId = id;
+    return sessionId;
   }
 
-  var sessionId = getSessionId();
+  function readConsentState() {
+    var privacy = window.Shopify && window.Shopify.customerPrivacy;
+    if (!privacy) {
+      analyticsAllowed = true;
+      marketingAllowed = true;
+      return;
+    }
+
+    if (typeof privacy.analyticsProcessingAllowed === "function") {
+      analyticsAllowed = privacy.analyticsProcessingAllowed();
+    } else if (typeof privacy.userCanBeTracked === "function") {
+      analyticsAllowed = privacy.userCanBeTracked();
+    } else {
+      analyticsAllowed = true;
+    }
+
+    if (typeof privacy.marketingAllowed === "function") {
+      marketingAllowed = privacy.marketingAllowed();
+    } else {
+      marketingAllowed = analyticsAllowed;
+    }
+  }
+
+  function isEventAllowed(eventType) {
+    if (MARKETING_EVENTS[eventType]) {
+      return marketingAllowed;
+    }
+    if (ANALYTICS_EVENTS[eventType]) {
+      return analyticsAllowed;
+    }
+    return analyticsAllowed;
+  }
+
+  function onConsentChange() {
+    var wasAnalytics = analyticsAllowed;
+    readConsentState();
+    consentReady = true;
+
+    if (!analyticsAllowed) {
+      clearSessionStorage();
+      queue = [];
+      if (flushTimer) {
+        clearTimeout(flushTimer);
+        flushTimer = null;
+      }
+      return;
+    }
+
+    if (!wasAnalytics && analyticsAllowed) {
+      ensureSessionId();
+      initTracking();
+    }
+  }
+
+  function loadCustomerPrivacyApi(callback) {
+    if (window.Shopify && window.Shopify.customerPrivacy) {
+      callback();
+      return;
+    }
+
+    if (!window.Shopify || typeof window.Shopify.loadFeatures !== "function") {
+      analyticsAllowed = true;
+      marketingAllowed = true;
+      consentReady = true;
+      callback();
+      return;
+    }
+
+    window.Shopify.loadFeatures(
+      [{ name: "consent-tracking-api", version: "0.1" }],
+      function (error) {
+        if (error) {
+          analyticsAllowed = true;
+          marketingAllowed = true;
+        } else {
+          readConsentState();
+        }
+        consentReady = true;
+        callback();
+      }
+    );
+  }
+
+  function getApiEndpoint() {
+    var base = config.apiUrl;
+    if (!base) return null;
+    return base.replace(/\/$/, "") + "/api/events";
+  }
+
+  function scheduleFlush() {
+    if (flushTimer) return;
+    flushTimer = setTimeout(function () {
+      flushTimer = null;
+      flushQueue();
+    }, FLUSH_INTERVAL_MS);
+  }
+
+  function flushQueue() {
+    if (!queue.length) return;
+
+    var endpoint = getApiEndpoint();
+    var batch = queue.splice(0, queue.length);
+
+    if (!endpoint) {
+      if (typeof console !== "undefined" && console.log) {
+        console.log("[RecoAI] flush (no apiUrl)", batch);
+      }
+      return;
+    }
+
+    var payload = JSON.stringify({
+      shop: config.shop,
+      events: batch,
+    });
+
+    var sent = false;
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      try {
+        sent = navigator.sendBeacon(endpoint, new Blob([payload], { type: "application/json" }));
+      } catch (e) {
+        sent = false;
+      }
+    }
+
+    if (!sent && typeof fetch === "function") {
+      fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true,
+        credentials: "omit",
+      }).catch(function () {
+        queue = batch.concat(queue);
+      });
+    }
+  }
+
+  function enqueueFlush() {
+    if (queue.length >= BATCH_SIZE) {
+      flushQueue();
+      return;
+    }
+    scheduleFlush();
+  }
 
   function track(eventType, metadata) {
+    if (!consentReady || !isEventAllowed(eventType)) {
+      return null;
+    }
+
+    var sid = ensureSessionId();
+    if (!sid) return null;
+
     var event = {
       eventType: eventType,
       shop: config.shop,
-      sessionId: sessionId,
-      customerId: config.customerId || null,
+      sessionId: sid,
+      customerId: analyticsAllowed && config.customerId ? String(config.customerId) : null,
       timestamp: new Date().toISOString(),
       metadata: metadata || {},
     };
+
     queue.push(event);
     if (typeof console !== "undefined" && console.log) {
       console.log("[RecoAI]", eventType, event);
     }
+    enqueueFlush();
     return event;
   }
 
@@ -228,11 +420,40 @@
     );
   }
 
-  function init() {
+  var trackingInitialized = false;
+
+  function initTracking() {
+    if (trackingInitialized || !analyticsAllowed) return;
+    trackingInitialized = true;
+    ensureSessionId();
     capturePageView();
     patchFetch();
     patchXHR();
     bindCheckoutTracking();
+  }
+
+  function bindLifecycle() {
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") {
+        flushQueue();
+      }
+    });
+    window.addEventListener("pagehide", flushQueue);
+  }
+
+  function start() {
+    bindLifecycle();
+
+    document.addEventListener("visitorConsentCollected", function () {
+      onConsentChange();
+    });
+
+    loadCustomerPrivacyApi(function () {
+      onConsentChange();
+      if (analyticsAllowed) {
+        initTracking();
+      }
+    });
   }
 
   window.RecoAI = {
@@ -243,11 +464,18 @@
     getQueue: function () {
       return queue.slice();
     },
+    flush: flushQueue,
+    hasAnalyticsConsent: function () {
+      return analyticsAllowed;
+    },
+    hasMarketingConsent: function () {
+      return marketingAllowed;
+    },
   };
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", start);
   } else {
-    init();
+    start();
   }
 })();

@@ -22,6 +22,7 @@
     "db:migrate:dev": "dotenv -e .env -- npm run db:migrate:dev --workspace=packages/database",
     "db:seed": "dotenv -e .env -- npm run db:seed --workspace=packages/database",
     "test:sprint-5": "dotenv -e .env -- npx tsx apps/web/scripts/test-sprint-5.ts",
+    "test:sprint-7": "dotenv -e .env -- npx tsx apps/web/scripts/test-sprint-7.ts",
     "shopify": "shopify"
   },
   "devDependencies": {

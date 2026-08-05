@@ -2,6 +2,7 @@
   <script>
     window.__recoai = {
       shop: {{ shop.permanent_domain | json }},
+      apiUrl: {{ block.settings.api_url | json }},
       customerId: {% if customer %}{{ customer.id | json }}{% else %}null{% endif %},
       pageType: {{ request.page_type | json }},
       productId: {% if product %}{{ product.id | json }}{% else %}null{% endif %},
@@ -23,6 +24,12 @@
       "id": "enabled",
       "label": "t:tracking_embed.settings.enabled.label",
       "default": true
+    },
+    {
+      "type": "text",
+      "id": "api_url",
+      "label": "t:tracking_embed.settings.api_url.label",
+      "info": "t:tracking_embed.settings.api_url.info"
     }
   ]
 }

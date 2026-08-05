@@ -4,6 +4,10 @@
     "settings": {
       "enabled": {
         "label": "Enable RecoAI behavioral tracking"
+      },
+      "api_url": {
+        "label": "RecoAI app URL",
+        "info": "Your RecoAI app URL (e.g. https://your-app.example.com). Required for event ingestion."
       }
     }
   }
