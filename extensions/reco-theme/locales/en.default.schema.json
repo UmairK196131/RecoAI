@@ -11,7 +11,9 @@
       }
     }
   },
-  "shared": {
+  "recommendation_widget": {
+    "name": "RecoAI Recommendations",
+    "info": "Generic block — prefer page-specific RecoAI blocks when available.",
     "settings": {
       "api_url": {
         "label": "RecoAI app URL",
@@ -34,18 +36,6 @@
         "label": "Columns",
         "info": "Used when layout is Grid. On mobile, columns adapt automatically (2 cols under 480px)."
       },
-      "show_price": {
-        "label": "Show price"
-      },
-      "show_atc": {
-        "label": "Show add to cart button"
-      }
-    }
-  },
-  "recommendation_widget": {
-    "name": "RecoAI Recommendations",
-    "info": "Generic block — prefer page-specific RecoAI blocks when available.",
-    "settings": {
       "placement_type": {
         "label": "Placement type",
         "options": {
@@ -55,41 +45,171 @@
           "collection": "Collection",
           "search": "Search results"
         }
+      },
+      "show_price": {
+        "label": "Show price"
+      },
+      "show_atc": {
+        "label": "Show add to cart button"
       }
     }
   },
   "product_ymal": {
     "name": "RecoAI: You may also like",
-    "info": "Product page recommendations using similar products. Place below the product form or near the description."
+    "info": "Product page recommendations using similar products. Place below the product form or near the description.",
+    "settings": {
+      "api_url": {
+        "label": "RecoAI app URL",
+        "info": "Your RecoAI app URL (e.g. https://your-app.example.com). Required to load recommendations."
+      },
+      "heading": { "label": "Heading" },
+      "item_count": { "label": "Number of products" },
+      "layout": {
+        "label": "Layout",
+        "options": { "grid": "Grid", "carousel": "Carousel" }
+      },
+      "columns": {
+        "label": "Columns",
+        "info": "Used when layout is Grid. On mobile, columns adapt automatically (2 cols under 480px)."
+      },
+      "show_price": { "label": "Show price" },
+      "show_atc": { "label": "Show add to cart button" }
+    }
   },
   "product_fbt": {
     "name": "RecoAI: Bought together",
-    "info": "Frequently bought together bundles for the product page. Place near Add to cart."
+    "info": "Frequently bought together bundles for the product page. Place near Add to cart.",
+    "settings": {
+      "api_url": {
+        "label": "RecoAI app URL",
+        "info": "Your RecoAI app URL (e.g. https://your-app.example.com). Required to load recommendations."
+      },
+      "heading": { "label": "Heading" },
+      "item_count": { "label": "Number of products" },
+      "layout": {
+        "label": "Layout",
+        "options": { "grid": "Grid", "carousel": "Carousel" }
+      },
+      "columns": {
+        "label": "Columns",
+        "info": "Used when layout is Grid. On mobile, columns adapt automatically (2 cols under 480px)."
+      },
+      "show_price": { "label": "Show price" },
+      "show_atc": { "label": "Show add to cart button" }
+    }
   },
   "cart_reco": {
     "name": "RecoAI: Add these too",
-    "info": "Complementary products for the cart page. Cart items are excluded automatically."
+    "info": "Complementary products for the cart page. Cart items are excluded automatically.",
+    "settings": {
+      "api_url": {
+        "label": "RecoAI app URL",
+        "info": "Your RecoAI app URL (e.g. https://your-app.example.com). Required to load recommendations."
+      },
+      "heading": { "label": "Heading" },
+      "item_count": { "label": "Number of products" },
+      "layout": {
+        "label": "Layout",
+        "options": { "grid": "Grid", "carousel": "Carousel" }
+      },
+      "columns": {
+        "label": "Columns",
+        "info": "Used when layout is Grid. On mobile, columns adapt automatically (2 cols under 480px)."
+      },
+      "show_price": { "label": "Show price" },
+      "show_atc": { "label": "Show add to cart button" }
+    }
   },
   "home_trending": {
     "name": "RecoAI: Trending now",
-    "info": "Homepage trending / best-seller recommendations. Place in a featured section below the hero."
+    "info": "Homepage trending / best-seller recommendations. Place in a featured section below the hero.",
+    "settings": {
+      "api_url": {
+        "label": "RecoAI app URL",
+        "info": "Your RecoAI app URL (e.g. https://your-app.example.com). Required to load recommendations."
+      },
+      "heading": { "label": "Heading" },
+      "item_count": { "label": "Number of products" },
+      "layout": {
+        "label": "Layout",
+        "options": { "grid": "Grid", "carousel": "Carousel" }
+      },
+      "columns": {
+        "label": "Columns",
+        "info": "Used when layout is Grid. On mobile, columns adapt automatically (2 cols under 480px)."
+      },
+      "show_price": { "label": "Show price" },
+      "show_atc": { "label": "Show add to cart button" }
+    }
   },
   "home_picks": {
     "name": "RecoAI: Picks for you",
-    "info": "Personalized homepage picks based on recent browsing. Place below trending or in a mid-page section."
+    "info": "Personalized homepage picks based on recent browsing. Place below trending or in a mid-page section.",
+    "settings": {
+      "api_url": {
+        "label": "RecoAI app URL",
+        "info": "Your RecoAI app URL (e.g. https://your-app.example.com). Required to load recommendations."
+      },
+      "heading": { "label": "Heading" },
+      "item_count": { "label": "Number of products" },
+      "layout": {
+        "label": "Layout",
+        "options": { "grid": "Grid", "carousel": "Carousel" }
+      },
+      "columns": {
+        "label": "Columns",
+        "info": "Used when layout is Grid. On mobile, columns adapt automatically (2 cols under 480px)."
+      },
+      "show_price": { "label": "Show price" },
+      "show_atc": { "label": "Show add to cart button" }
+    }
   },
   "collection_reco": {
     "name": "RecoAI: Related products",
-    "info": "Related products for collection pages, seeded from products in the current collection."
+    "info": "Related products for collection pages, seeded from products in the current collection.",
+    "settings": {
+      "api_url": {
+        "label": "RecoAI app URL",
+        "info": "Your RecoAI app URL (e.g. https://your-app.example.com). Required to load recommendations."
+      },
+      "heading": { "label": "Heading" },
+      "item_count": { "label": "Number of products" },
+      "layout": {
+        "label": "Layout",
+        "options": { "grid": "Grid", "carousel": "Carousel" }
+      },
+      "columns": {
+        "label": "Columns",
+        "info": "Used when layout is Grid. On mobile, columns adapt automatically (2 cols under 480px)."
+      },
+      "show_price": { "label": "Show price" },
+      "show_atc": { "label": "Show add to cart button" }
+    }
   },
   "search_reco": {
     "name": "RecoAI: Search recommendations",
     "info": "Shows popular picks when search returns few or no results.",
     "settings": {
+      "api_url": {
+        "label": "RecoAI app URL",
+        "info": "Your RecoAI app URL (e.g. https://your-app.example.com). Required to load recommendations."
+      },
+      "heading": { "label": "Heading" },
       "low_results_threshold": {
         "label": "Show when results ≤",
         "info": "Widget appears only when search result count is at or below this number (including zero)."
-      }
+      },
+      "item_count": { "label": "Number of products" },
+      "layout": {
+        "label": "Layout",
+        "options": { "grid": "Grid", "carousel": "Carousel" }
+      },
+      "columns": {
+        "label": "Columns",
+        "info": "Used when layout is Grid. On mobile, columns adapt automatically (2 cols under 480px)."
+      },
+      "show_price": { "label": "Show price" },
+      "show_atc": { "label": "Show add to cart button" }
     }
   }
 }
