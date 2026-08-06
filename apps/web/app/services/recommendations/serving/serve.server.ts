@@ -44,15 +44,60 @@ function emptyResponse(
   };
 }
 
-function formatRecommendations(
+function decimalToPriceString(value: number | null | undefined): string | null {
+  if (value === null || value === undefined || Number.isNaN(value)) return null;
+  return (Math.round(value * 100) / 100).toFixed(2);
+}
+
+/**
+ * Formats recommendation items for the storefront widget, hydrating handle /
+ * variant from the product catalog when available.
+ */
+async function formatRecommendations(
+  shopId: string,
   items: RecommendationItem[],
-): ServingResponse["recommendations"] {
-  return items.map((item) => ({
-    product_id: toShopifyProductGid(item.shopifyProductId),
-    title: item.title,
-    score: Math.round(item.score * 1000) / 1000,
-    reason_tags: reasonTagsForStrategy(item.strategy),
-  }));
+): Promise<ServingResponse["recommendations"]> {
+  if (items.length === 0) return [];
+
+  const products = await db.product.findMany({
+    where: { shopId, id: { in: items.map((item) => item.productId) } },
+    select: {
+      id: true,
+      handle: true,
+      imageUrls: true,
+      priceRangeMin: true,
+      variants: {
+        orderBy: { createdAt: "asc" },
+        take: 1,
+        select: { shopifyVariantId: true },
+      },
+    },
+  });
+  const byId = new Map(products.map((p) => [p.id, p]));
+
+  return items.map((item) => {
+    const product = byId.get(item.productId);
+    const handle = product?.handle ?? null;
+    const imageUrl =
+      item.imageUrls[0] ?? product?.imageUrls[0] ?? null;
+    const price =
+      decimalToPriceString(item.priceRangeMin) ??
+      (product?.priceRangeMin != null
+        ? decimalToPriceString(Number(product.priceRangeMin))
+        : null);
+
+    return {
+      product_id: toShopifyProductGid(item.shopifyProductId),
+      title: item.title,
+      score: Math.round(item.score * 1000) / 1000,
+      reason_tags: reasonTagsForStrategy(item.strategy),
+      image_url: imageUrl,
+      price,
+      handle,
+      url: handle ? `/products/${handle}` : null,
+      variant_id: product?.variants[0]?.shopifyVariantId ?? null,
+    };
+  });
 }
 
 async function resolvePlacement(
@@ -284,7 +329,10 @@ export async function serveRecommendations(
         ? toShopifyProductGid(productIdForResponse)
         : null,
       strategy_used: strategyUsed,
-      recommendations: formatRecommendations(reranked.slice(0, placement.maxItems)),
+      recommendations: await formatRecommendations(
+        shopRecord.id,
+        reranked.slice(0, placement.maxItems),
+      ),
       generated_at: generatedAt,
       meta: { cache_hit: cacheHit, latency_ms: latencyMs },
     };
@@ -323,7 +371,7 @@ export async function serveRecommendations(
               ? toShopifyProductGid(productIdForResponse)
               : null,
             strategy_used: stale.strategyUsed,
-            recommendations: formatRecommendations(stale.items),
+            recommendations: await formatRecommendations(shopRecord.id, stale.items),
             generated_at: stale.generatedAt,
             meta: { cache_hit: true, latency_ms: latencyMs },
           };

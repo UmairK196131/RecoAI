@@ -10,5 +10,47 @@
         "info": "Your RecoAI app URL (e.g. https://your-app.example.com). Required for event ingestion."
       }
     }
+  },
+  "recommendation_widget": {
+    "name": "RecoAI Recommendations",
+    "settings": {
+      "api_url": {
+        "label": "RecoAI app URL",
+        "info": "Your RecoAI app URL (e.g. https://your-app.example.com). Required to load recommendations."
+      },
+      "heading": {
+        "label": "Heading"
+      },
+      "item_count": {
+        "label": "Number of products"
+      },
+      "layout": {
+        "label": "Layout",
+        "options": {
+          "grid": "Grid",
+          "carousel": "Carousel"
+        }
+      },
+      "columns": {
+        "label": "Columns",
+        "info": "Used when layout is Grid. On mobile, columns adapt automatically."
+      },
+      "placement_type": {
+        "label": "Placement type",
+        "options": {
+          "product_page": "Product page",
+          "cart": "Cart",
+          "home": "Home",
+          "collection": "Collection",
+          "search": "Search results"
+        }
+      },
+      "show_price": {
+        "label": "Show price"
+      },
+      "show_atc": {
+        "label": "Show add to cart button"
+      }
+    }
   }
 }

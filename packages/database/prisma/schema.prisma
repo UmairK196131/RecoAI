@@ -119,6 +119,7 @@ model Product {
   shopifyProductId String          @map("shopify_product_id")
   shopId           String          @map("shop_id")
   title            String
+  handle           String?
   description      String?         @db.Text
   tags             String[]        @default([])
   productType      String?         @map("product_type")

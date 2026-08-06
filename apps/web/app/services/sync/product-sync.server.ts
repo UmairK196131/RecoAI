@@ -33,6 +33,7 @@ interface ShopifyVariant {
 export interface ShopifyProductNode {
   id: string;
   title: string;
+  handle?: string | null;
   description?: string | null;
   tags: string[];
   productType?: string | null;
@@ -46,6 +47,7 @@ export interface ShopifyProductNode {
 interface RestProductPayload {
   id: number | string;
   title: string;
+  handle?: string | null;
   body_html?: string | null;
   tags?: string;
   product_type?: string | null;
@@ -70,6 +72,7 @@ function restPayloadToNode(payload: RestProductPayload): ShopifyProductNode {
   return {
     id: `gid://shopify/Product/${payload.id}`,
     title: payload.title,
+    handle: payload.handle ?? null,
     description: payload.body_html ?? null,
     tags: parseTags(payload.tags),
     productType: payload.product_type ?? null,
@@ -110,6 +113,7 @@ export async function upsertProductFromNode(
       shopId,
       shopifyProductId,
       title: node.title,
+      handle: node.handle ?? null,
       description: node.description ?? null,
       tags: node.tags ?? [],
       productType: node.productType ?? null,
@@ -122,6 +126,7 @@ export async function upsertProductFromNode(
     },
     update: {
       title: node.title,
+      handle: node.handle ?? null,
       description: node.description ?? null,
       tags: node.tags ?? [],
       productType: node.productType ?? null,
@@ -200,6 +205,7 @@ const PRODUCT_BY_ID_QUERY = `#graphql
     product(id: $id) {
       id
       title
+      handle
       description
       tags
       productType

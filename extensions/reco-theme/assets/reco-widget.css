@@ -1,0 +1,210 @@
+/* RecoAI recommendation widget — BEM, scoped, dark-theme friendly */
+
+.recoai-block {
+  color-scheme: light dark;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.recoai-block[hidden] {
+  display: none !important;
+}
+
+.recoai-block__inner {
+  width: 100%;
+}
+
+.recoai-block__heading {
+  margin: 0 0 24px;
+  font-family: inherit;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: inherit;
+}
+
+.recoai-block__content {
+  width: 100%;
+}
+
+/* —— Grid —— */
+
+.recoai-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 480px) {
+  .recoai-grid {
+    grid-template-columns: repeat(min(3, var(--recoai-cols, 4)), minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .recoai-grid {
+    grid-template-columns: repeat(var(--recoai-cols, 4), minmax(0, 1fr));
+  }
+}
+
+/* —— Carousel —— */
+
+.recoai-carousel {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.recoai-carousel__track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  flex: 1 1 auto;
+  padding: 4px 0;
+  scrollbar-width: thin;
+}
+
+.recoai-carousel__slide {
+  flex: 0 0 calc(50% - 8px);
+  scroll-snap-align: start;
+  min-width: 0;
+}
+
+@media (min-width: 480px) {
+  .recoai-carousel__slide {
+    flex-basis: calc(33.333% - 11px);
+  }
+}
+
+@media (min-width: 768px) {
+  .recoai-carousel__slide {
+    flex-basis: calc(25% - 12px);
+  }
+}
+
+.recoai-carousel__arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.75;
+  padding: 0;
+  line-height: 1;
+}
+
+.recoai-carousel__arrow:hover,
+.recoai-carousel__arrow:focus-visible {
+  opacity: 1;
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+@media (max-width: 479px) {
+  .recoai-carousel__arrow {
+    display: none;
+  }
+}
+
+/* —— Card —— */
+
+.recoai-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.recoai-card__media {
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.recoai-card__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 1 / 1;
+}
+
+.recoai-card__image--placeholder {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.recoai-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.recoai-card__title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: inherit;
+  text-decoration: none;
+}
+
+.recoai-card__title:hover,
+.recoai-card__title:focus-visible {
+  text-decoration: underline;
+}
+
+.recoai-card__price {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.recoai-card__atc {
+  margin-top: 4px;
+  align-self: flex-start;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid currentColor;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.recoai-card__atc:hover,
+.recoai-card__atc:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .recoai-card__image--placeholder {
+    background: color-mix(in srgb, currentColor 16%, transparent);
+  }
+}

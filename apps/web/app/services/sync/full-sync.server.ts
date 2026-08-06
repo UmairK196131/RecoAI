@@ -17,6 +17,7 @@ const PRODUCTS_QUERY = `#graphql
         node {
           id
           title
+          handle
           description
           tags
           productType

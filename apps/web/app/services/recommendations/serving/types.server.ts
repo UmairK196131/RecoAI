@@ -35,6 +35,16 @@ export interface ServingRecommendation {
   title: string;
   score: number;
   reason_tags: string[];
+  /** First product image URL for storefront widgets. */
+  image_url: string | null;
+  /** Display price (min of range), numeric string for money formatting. */
+  price: string | null;
+  /** Product handle for /products/{handle} links. */
+  handle: string | null;
+  /** Relative product URL when handle is known. */
+  url: string | null;
+  /** First variant Shopify ID for quick-add. */
+  variant_id: string | null;
 }
 
 export interface ServingResponse {
