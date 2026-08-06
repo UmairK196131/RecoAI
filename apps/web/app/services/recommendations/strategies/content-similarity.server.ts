@@ -1,24 +1,5 @@
-import type { RecommendationStrategy } from "@prisma/client";
-
 import { findSimilarProducts, type SimilarProductResult } from "../../embeddings/similarity.server";
-
-export interface RecommendationRequest {
-  shopId: string;
-  strategy: RecommendationStrategy;
-  productId?: string;
-  limit?: number;
-  excludeProductIds?: string[];
-}
-
-export interface RecommendationItem {
-  productId: string;
-  shopifyProductId: string;
-  title: string;
-  score: number;
-  imageUrls: string[];
-  priceRangeMin: number | null;
-  priceRangeMax: number | null;
-}
+import type { RecommendationItem, RecommendationRequest } from "../types";
 
 function mapSimilarProduct(result: SimilarProductResult): RecommendationItem {
   return {
@@ -29,6 +10,7 @@ function mapSimilarProduct(result: SimilarProductResult): RecommendationItem {
     imageUrls: result.imageUrls,
     priceRangeMin: result.priceRangeMin,
     priceRangeMax: result.priceRangeMax,
+    strategy: "content_similarity",
   };
 }
 

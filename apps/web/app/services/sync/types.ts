@@ -12,6 +12,7 @@ export type SyncJobName =
   | "gdpr-shop-redact"
   | "nightly-reconciliation"
   | "nightly-reembed"
+  | "trending-scores"
   | "shop-purge";
 
 export interface FullCatalogSyncJobData {

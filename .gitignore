@@ -23,6 +23,7 @@ extensions/*/node_modules
 # Database (local dev)
 *.sqlite
 *.sqlite-journal
+packages/database/generated
 
 # IDE
 .idea

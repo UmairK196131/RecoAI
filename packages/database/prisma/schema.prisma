@@ -88,6 +88,7 @@ model Shop {
   recommendationPlacements RecommendationPlacement[]
   recommendationLogs       RecommendationLog[]
   productEmbeddings        ProductEmbedding[]
+  trendingScores           TrendingScore[]
   abTestExperiments        ABTestExperiment[]
 
   @@index([status])
@@ -131,6 +132,7 @@ model Product {
   variants          ProductVariant[]
   behavioralEvents  BehavioralEvent[]
   embedding         ProductEmbedding?
+  trendingScore     TrendingScore?
 
   @@unique([shopId, shopifyProductId])
   @@index([shopId])
@@ -317,6 +319,27 @@ model ProductEmbedding {
 
   @@index([shopId])
   @@map("product_embeddings")
+}
+
+/// Rolling-window popularity scores (SRS 5.3 — recalculated every few hours).
+model TrendingScore {
+  id            String   @id @default(cuid())
+  shopId        String   @map("shop_id")
+  productId     String   @unique @map("product_id")
+  score         Float
+  orderVolume   Float    @default(0) @map("order_volume")
+  viewCount     Float    @default(0) @map("view_count")
+  salesVelocity Float    @default(0) @map("sales_velocity")
+  windowStart   DateTime @map("window_start")
+  windowEnd     DateTime @map("window_end")
+  computedAt    DateTime @default(now()) @map("computed_at")
+
+  shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, score(sort: Desc)])
+  @@index([shopId])
+  @@map("trending_scores")
 }
 
 enum ABTestStatus {

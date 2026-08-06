@@ -1,6 +1,11 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { enqueueNightlyReconciliation, enqueueNightlyReembed, enqueueShopPurge } from "../services/sync/enqueue.server";
+import {
+  enqueueNightlyReconciliation,
+  enqueueNightlyReembed,
+  enqueueShopPurge,
+  enqueueTrendingScores,
+} from "../services/sync/enqueue.server";
 import { ensureSyncWorkerStarted } from "../services/sync/worker.server";
 
 function authorizeCronRequest(request: Request): boolean {
@@ -39,6 +44,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (job === "reembed") {
     await enqueueNightlyReembed();
     return json({ ok: true, job: "nightly-reembed" });
+  }
+
+  if (job === "trending") {
+    await enqueueTrendingScores();
+    return json({ ok: true, job: "trending-scores" });
   }
 
   await enqueueNightlyReconciliation();

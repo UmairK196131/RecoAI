@@ -2,6 +2,7 @@ import { Worker, type Job } from "bullmq";
 import { getRedisConnectionOptions, SYNC_QUEUE_NAME } from "../queue.server";
 import { logSyncEvent } from "../logger.server";
 import { runNightlyReembedding } from "../embeddings/reembed.server";
+import { runTrendingScoreJob } from "../recommendations/trending/compute.server";
 import { runFullCatalogSync } from "./full-sync.server";
 import { runNightlyReconciliation } from "./reconciliation.server";
 import { runScheduledShopPurge } from "./purge.server";
@@ -78,6 +79,8 @@ async function processJob(job: Job) {
       return runNightlyReconciliation();
     case "nightly-reembed":
       return runNightlyReembedding();
+    case "trending-scores":
+      return runTrendingScoreJob();
     case "shop-purge":
       return runScheduledShopPurge();
     default:

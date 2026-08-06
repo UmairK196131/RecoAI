@@ -10,6 +10,7 @@ const SHOP_SCOPED_MODELS = [
   "RecommendationPlacement",
   "RecommendationLog",
   "ProductEmbedding",
+  "TrendingScore",
   "ABTestExperiment",
 ] as const;
 

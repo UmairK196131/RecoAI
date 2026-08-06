@@ -118,6 +118,13 @@ export async function enqueueNightlyReembed() {
   });
 }
 
+export async function enqueueTrendingScores() {
+  const queue = getSyncQueue();
+  await queue.add("trending-scores", {}, {
+    jobId: jobId("trending-scores", String(Date.now())),
+  });
+}
+
 export async function enqueueShopPurge() {
   const queue = getSyncQueue();
   await queue.add("shop-purge", {}, {

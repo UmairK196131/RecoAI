@@ -1,6 +1,7 @@
 import type { JobsOptions } from "bullmq";
 import { getSyncQueue } from "../queue.server";
 import { logSyncEvent } from "../logger.server";
+import { getTrendingJobCron } from "../recommendations/config.server";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -19,6 +20,7 @@ export async function ensureCronJobsScheduled() {
   global.__recoaiCronJobsScheduled = true;
 
   const queue = getSyncQueue();
+  const trendingCron = getTrendingJobCron();
 
   await queue.add(
     "nightly-reconciliation",
@@ -39,6 +41,15 @@ export async function ensureCronJobsScheduled() {
   );
 
   await queue.add(
+    "trending-scores",
+    {},
+    {
+      repeat: { pattern: trendingCron },
+      jobId: "cron-trending-scores",
+    } as JobsOptions,
+  );
+
+  await queue.add(
     "shop-purge",
     {},
     {
@@ -51,6 +62,7 @@ export async function ensureCronJobsScheduled() {
     event: "cron_jobs_scheduled",
     nightlyReconciliation: NIGHTLY_RECONCILIATION_CRON,
     nightlyReembed: NIGHTLY_REEMBED_CRON,
+    trendingScores: trendingCron,
     shopPurge: SHOP_PURGE_CRON,
   });
 }
