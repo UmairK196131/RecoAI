@@ -9,15 +9,24 @@ import {
 } from "./cache.server";
 import { applyBusinessRuleFilters, resolveProductIdSet } from "./filters.server";
 import {
-  isPlacementType,
+  isRecommendationStrategy,
+  normalizeShopifyId,
   normalizeShopifyProductId,
   parseCartProductIds,
   parseExclusionRules,
   placementResponseKey,
   reasonTagsForStrategy,
+  resolvePlacementTypeParam,
+  normalizePlacementKeyParam,
   strategyUsedLabel,
   toShopifyProductGid,
+  isPlacementType,
 } from "./parse.server";
+import {
+  defaultStrategyForPlacement,
+  defaultTitleForPlacement,
+  getPlacementDefaults,
+} from "./placement-defaults.server";
 import { rerankBySessionViews } from "./rerank.server";
 import { recordServingLatency } from "./timing.server";
 import type {
@@ -103,51 +112,85 @@ async function formatRecommendations(
 async function resolvePlacement(
   shopId: string,
   placementType: PlacementType,
+  opts: {
+    placementKey?: string;
+    strategyHint?: RecommendationStrategy;
+    titleHint?: string;
+  } = {},
 ): Promise<ResolvedPlacement> {
+  const defaults = getPlacementDefaults(placementType, opts.placementKey);
+  const strategyHint = opts.strategyHint ?? defaults.strategy;
+  const titleHint = opts.titleHint ?? defaults.titleText;
+
+  if (strategyHint) {
+    const byStrategy = await db.recommendationPlacement.findFirst({
+      where: {
+        shopId,
+        placementType,
+        strategy: strategyHint,
+        enabled: true,
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+    if (byStrategy) {
+      return mapPlacement(byStrategy);
+    }
+  }
+
+  if (titleHint) {
+    const byTitle = await db.recommendationPlacement.findFirst({
+      where: {
+        shopId,
+        placementType,
+        titleText: titleHint,
+        enabled: true,
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+    if (byTitle) {
+      return mapPlacement(byTitle);
+    }
+  }
+
   const placement = await db.recommendationPlacement.findFirst({
     where: { shopId, placementType, enabled: true },
     orderBy: { updatedAt: "desc" },
   });
 
   if (placement) {
-    return {
-      id: placement.id,
-      placementType: placement.placementType,
-      strategy: placement.strategy,
-      enabled: placement.enabled,
-      maxItems: placement.maxItems,
-      titleText: placement.titleText,
-      exclusionRules: parseExclusionRules(placement.exclusionRules),
-    };
+    return mapPlacement(placement);
   }
 
-  // Soft fallback when merchant has not configured placements yet
+  // Soft fallback when merchant has not configured placements yet (Sprint 13 defaults)
   return {
     id: null,
     placementType,
-    strategy: null,
+    strategy: strategyHint,
     enabled: true,
     maxItems: 4,
-    titleText: defaultTitleForPlacement(placementType),
+    titleText: titleHint || defaultTitleForPlacement(placementType, opts.placementKey),
     exclusionRules: { excludeOutOfStock: true },
   };
 }
 
-function defaultTitleForPlacement(placementType: PlacementType): string {
-  switch (placementType) {
-    case "product_page":
-      return "You may also like";
-    case "cart":
-      return "Add these too";
-    case "home":
-      return "Trending now";
-    case "collection":
-      return "You may also like";
-    case "search":
-      return "Popular picks";
-    default:
-      return "Recommended for you";
-  }
+function mapPlacement(placement: {
+  id: string;
+  placementType: PlacementType;
+  strategy: RecommendationStrategy;
+  enabled: boolean;
+  maxItems: number;
+  titleText: string;
+  exclusionRules: unknown;
+}): ResolvedPlacement {
+  return {
+    id: placement.id,
+    placementType: placement.placementType,
+    strategy: placement.strategy,
+    enabled: placement.enabled,
+    maxItems: placement.maxItems,
+    titleText: placement.titleText,
+    exclusionRules: parseExclusionRules(placement.exclusionRules),
+  };
 }
 
 async function resolveInternalProductId(
@@ -165,6 +208,37 @@ async function resolveInternalProductId(
   return product?.id;
 }
 
+/**
+ * Collection page: seed from a product in the collection for content similarity,
+ * and exclude products already listed in that collection.
+ */
+async function resolveCollectionContext(
+  shopId: string,
+  shopifyCollectionId: string | undefined,
+): Promise<{ seedProductId?: string; excludeProductIds: string[] }> {
+  if (!shopifyCollectionId) return { excludeProductIds: [] };
+
+  const normalized = normalizeShopifyId(shopifyCollectionId);
+  const collection = await db.collection.findUnique({
+    where: {
+      shopId_shopifyCollectionId: {
+        shopId,
+        shopifyCollectionId: normalized,
+      },
+    },
+    select: { productIds: true },
+  });
+
+  if (!collection || collection.productIds.length === 0) {
+    return { excludeProductIds: [] };
+  }
+
+  return {
+    seedProductId: collection.productIds[0],
+    excludeProductIds: collection.productIds,
+  };
+}
+
 function normalizeShopDomain(shop: string): string {
   return shop.trim().toLowerCase();
 }
@@ -176,7 +250,11 @@ function isValidShopDomain(shop: string): boolean {
 export function parseServingRequestFromUrl(url: URL): ServingRequest | { error: string } {
   const shop = url.searchParams.get("shop");
   const placementTypeRaw = url.searchParams.get("placement_type");
+  const placementKeyRaw = url.searchParams.get("placement_key");
+  const strategyRaw = url.searchParams.get("strategy");
   const productId = url.searchParams.get("product_id") ?? undefined;
+  const collectionId = url.searchParams.get("collection_id") ?? undefined;
+  const searchQuery = url.searchParams.get("search_query") ?? undefined;
   const sessionId = url.searchParams.get("session_id") ?? undefined;
   const cartRaw = url.searchParams.get("cart_product_ids");
 
@@ -187,14 +265,32 @@ export function parseServingRequestFromUrl(url: URL): ServingRequest | { error: 
   }
 
   if (!placementTypeRaw) return { error: "placement_type is required" };
-  if (!isPlacementType(placementTypeRaw)) {
+  const placementType = resolvePlacementTypeParam(placementTypeRaw);
+  if (!placementType) {
     return { error: "Invalid placement_type" };
+  }
+
+  const placementKey = normalizePlacementKeyParam(
+    placementKeyRaw,
+    placementTypeRaw,
+  );
+
+  let strategy: RecommendationStrategy | undefined;
+  if (strategyRaw) {
+    if (!isRecommendationStrategy(strategyRaw)) {
+      return { error: "Invalid strategy" };
+    }
+    strategy = strategyRaw;
   }
 
   return {
     shop: normalizedShop,
-    placementType: placementTypeRaw,
+    placementType,
+    placementKey,
+    strategy,
     productId: productId ? normalizeShopifyProductId(productId) : undefined,
+    collectionId: collectionId ? normalizeShopifyId(collectionId) : undefined,
+    searchQuery: searchQuery?.trim() || undefined,
     sessionId: sessionId || undefined,
     cartProductIds: parseCartProductIds(cartRaw),
   };
@@ -206,18 +302,28 @@ async function buildBaseRecommendations(
   internalProductId: string | undefined,
   sessionId: string | undefined,
   exclusionRules: ExclusionRules,
+  extraExcludeIds: string[] = [],
 ): Promise<{ items: RecommendationItem[]; strategyUsed: string }> {
   // Fetch extra candidates so post-filters / cart still leave maxItems
   const fetchLimit = Math.min(Math.max(placement.maxItems * 4, 16), 48);
   const cacheLimit = Math.min(Math.max(placement.maxItems * 2, 8), 24);
 
+  const strategy =
+    (placement.strategy ??
+      defaultStrategyForPlacement(placement.placementType)) as RecommendationStrategy;
+
+  const excludeProductIds = [
+    ...(internalProductId ? [internalProductId] : []),
+    ...extraExcludeIds,
+  ];
+
   const { items, selection } = await getRecommendationsWithColdStart({
     shopId,
-    strategy: (placement.strategy ?? "trending") as RecommendationStrategy,
+    strategy,
     productId: internalProductId,
     sessionId,
     limit: fetchLimit,
-    excludeProductIds: internalProductId ? [internalProductId] : [],
+    excludeProductIds,
   });
 
   // Cache merchant-rule-filtered results without cart (cart is per-request)
@@ -229,9 +335,7 @@ async function buildBaseRecommendations(
   const strategyUsed = strategyUsedLabel(
     selection.strategies.length > 0
       ? selection.strategies
-      : placement.strategy
-        ? [placement.strategy]
-        : ["trending"],
+      : [strategy],
   );
 
   return { items: filtered, strategyUsed };
@@ -245,7 +349,12 @@ export async function serveRecommendations(
   request: ServingRequest,
 ): Promise<ServingResponse> {
   const started = performance.now();
-  const placementKeyFallback = request.placementType;
+  const defaults = getPlacementDefaults(
+    request.placementType,
+    request.placementKey,
+  );
+  const placementKeyFallback =
+    request.placementKey ?? defaults.placementKey ?? request.placementType;
   const productIdForResponse = request.productId ?? null;
 
   try {
@@ -256,22 +365,64 @@ export async function serveRecommendations(
       return emptyResponse(placementKeyFallback, productIdForResponse, latencyMs);
     }
 
-    const placement = await resolvePlacement(shopRecord.id, request.placementType);
+    const placement = await resolvePlacement(
+      shopRecord.id,
+      request.placementType,
+      {
+        placementKey: request.placementKey,
+        strategyHint: request.strategy ?? defaults.strategy,
+        titleHint: defaults.titleText,
+      },
+    );
+
     const placementKey = placementResponseKey(
       placement.placementType,
       placement.titleText,
     );
 
+    const collectionCtx = await resolveCollectionContext(
+      shopRecord.id,
+      request.collectionId,
+    );
+
+    // Cart: seed from first cart item when no product_id provided
+    const cartSeedShopifyId =
+      !request.productId && request.cartProductIds?.length
+        ? request.cartProductIds[0]
+        : undefined;
+
     const [internalProductId, cartInternalIds] = await Promise.all([
-      resolveInternalProductId(shopRecord.id, request.productId),
+      resolveInternalProductId(
+        shopRecord.id,
+        request.productId ?? cartSeedShopifyId,
+      ),
       resolveProductIdSet(shopRecord.id, request.cartProductIds ?? []),
     ]);
+
+    // Collection: use collection seed when no product context
+    const seedProductId =
+      internalProductId ??
+      (request.placementType === "collection"
+        ? collectionCtx.seedProductId
+        : undefined);
+
+    const extraExcludeIds =
+      request.placementType === "collection"
+        ? collectionCtx.excludeProductIds.filter((id) => id !== seedProductId)
+        : [];
+
+    const cacheParts = {
+      placementType: request.placementType,
+      placementKey: request.placementKey ?? defaults.placementKey,
+      productId: seedProductId ?? null,
+      collectionId: request.collectionId ?? null,
+      strategy: placement.strategy,
+    };
 
     let cacheHit = false;
     const cached: CachedServingPayload | null = await getCachedServingResult(
       shopRecord.id,
-      request.placementType,
-      internalProductId ?? null,
+      cacheParts,
     );
 
     let baseItems: RecommendationItem[];
@@ -287,25 +438,21 @@ export async function serveRecommendations(
       const built = await buildBaseRecommendations(
         shopRecord.id,
         placement,
-        internalProductId,
+        seedProductId,
         request.sessionId,
         placement.exclusionRules,
+        extraExcludeIds,
       );
       baseItems = built.items;
       strategyUsed = built.strategyUsed;
       generatedAt = new Date().toISOString();
 
-      await setCachedServingResult(
-        shopRecord.id,
-        request.placementType,
-        internalProductId ?? null,
-        {
-          items: baseItems,
-          strategyUsed,
-          placementKey,
-          generatedAt,
-        },
-      );
+      await setCachedServingResult(shopRecord.id, cacheParts, {
+        items: baseItems,
+        strategyUsed,
+        placementKey,
+        generatedAt,
+      });
     }
 
     // Cart exclusions are request-specific and applied after cache (FR-REC-03)
@@ -314,14 +461,26 @@ export async function serveRecommendations(
         ? baseItems.filter((item) => !cartInternalIds.has(item.productId))
         : baseItems;
 
+    // Collection: also drop in-collection products if they slipped through cache
+    const collectionFiltered =
+      request.placementType === "collection" &&
+      collectionCtx.excludeProductIds.length > 0
+        ? cartFiltered.filter(
+            (item) => !collectionCtx.excludeProductIds.includes(item.productId),
+          )
+        : cartFiltered;
+
     const reranked = await rerankBySessionViews(
       shopRecord.id,
       request.sessionId,
-      cartFiltered,
+      collectionFiltered,
     );
 
     const latencyMs = Math.round(performance.now() - started);
     recordServingLatency(latencyMs);
+
+    // search_query is accepted for future query-aware ranking; trending default today
+    void request.searchQuery;
 
     return {
       placement: placementKey,
@@ -345,6 +504,7 @@ export async function serveRecommendations(
         level: "error",
         shop: request.shop,
         placement_type: request.placementType,
+        placement_key: request.placementKey,
         error: error instanceof Error ? error.message : "unknown",
         timestamp: new Date().toISOString(),
       }),
@@ -357,11 +517,13 @@ export async function serveRecommendations(
           shopRecord.id,
           request.productId,
         );
-        const stale = await getCachedServingResult(
-          shopRecord.id,
-          request.placementType,
-          internalProductId ?? null,
-        );
+        const stale = await getCachedServingResult(shopRecord.id, {
+          placementType: request.placementType,
+          placementKey: request.placementKey ?? defaults.placementKey,
+          productId: internalProductId ?? null,
+          collectionId: request.collectionId ?? null,
+          strategy: request.strategy ?? defaults.strategy,
+        });
         if (stale && stale.items.length > 0) {
           const latencyMs = Math.round(performance.now() - started);
           recordServingLatency(latencyMs);

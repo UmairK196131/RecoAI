@@ -65,8 +65,20 @@ async function runStrategy(
       if (items.length > 0) return items;
       return fallbackContentOrTrending(request);
     }
+    case "personalized_blend": {
+      const limit = request.limit ?? 8;
+      const [recent, trending, content] = await Promise.all([
+        getRecentlyViewedRecommendations(request),
+        getTrendingRecommendations(request),
+        request.productId
+          ? getContentSimilarityRecommendations(request)
+          : Promise.resolve([] as RecommendationItem[]),
+      ]);
+      const blended = mergeRecommendationLists([recent, content, trending], limit);
+      if (blended.length > 0) return blended;
+      return fallbackContentOrTrending(request);
+    }
     default:
-      // personalized_blend arrives in a later sprint.
       return getTrendingRecommendations(request);
   }
 }

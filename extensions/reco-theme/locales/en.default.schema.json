@@ -11,8 +11,7 @@
       }
     }
   },
-  "recommendation_widget": {
-    "name": "RecoAI Recommendations",
+  "shared": {
     "settings": {
       "api_url": {
         "label": "RecoAI app URL",
@@ -33,8 +32,20 @@
       },
       "columns": {
         "label": "Columns",
-        "info": "Used when layout is Grid. On mobile, columns adapt automatically."
+        "info": "Used when layout is Grid. On mobile, columns adapt automatically (2 cols under 480px)."
       },
+      "show_price": {
+        "label": "Show price"
+      },
+      "show_atc": {
+        "label": "Show add to cart button"
+      }
+    }
+  },
+  "recommendation_widget": {
+    "name": "RecoAI Recommendations",
+    "info": "Generic block — prefer page-specific RecoAI blocks when available.",
+    "settings": {
       "placement_type": {
         "label": "Placement type",
         "options": {
@@ -44,12 +55,40 @@
           "collection": "Collection",
           "search": "Search results"
         }
-      },
-      "show_price": {
-        "label": "Show price"
-      },
-      "show_atc": {
-        "label": "Show add to cart button"
+      }
+    }
+  },
+  "product_ymal": {
+    "name": "RecoAI: You may also like",
+    "info": "Product page recommendations using similar products. Place below the product form or near the description."
+  },
+  "product_fbt": {
+    "name": "RecoAI: Bought together",
+    "info": "Frequently bought together bundles for the product page. Place near Add to cart."
+  },
+  "cart_reco": {
+    "name": "RecoAI: Add these too",
+    "info": "Complementary products for the cart page. Cart items are excluded automatically."
+  },
+  "home_trending": {
+    "name": "RecoAI: Trending now",
+    "info": "Homepage trending / best-seller recommendations. Place in a featured section below the hero."
+  },
+  "home_picks": {
+    "name": "RecoAI: Picks for you",
+    "info": "Personalized homepage picks based on recent browsing. Place below trending or in a mid-page section."
+  },
+  "collection_reco": {
+    "name": "RecoAI: Related products",
+    "info": "Related products for collection pages, seeded from products in the current collection."
+  },
+  "search_reco": {
+    "name": "RecoAI: Search recommendations",
+    "info": "Shows popular picks when search returns few or no results.",
+    "settings": {
+      "low_results_threshold": {
+        "label": "Show when results ≤",
+        "info": "Widget appears only when search result count is at or below this number (including zero)."
       }
     }
   }

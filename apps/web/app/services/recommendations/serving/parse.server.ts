@@ -1,4 +1,8 @@
 import type { PlacementType, RecommendationStrategy } from "@prisma/client";
+import {
+  coercePlacementType,
+  isPlacementKey,
+} from "./placement-defaults.server";
 import type { ExclusionRules } from "./types.server";
 
 const PLACEMENT_TYPES = new Set<string>([
@@ -9,18 +13,61 @@ const PLACEMENT_TYPES = new Set<string>([
   "search",
 ]);
 
+const STRATEGIES = new Set<string>([
+  "collaborative_filtering",
+  "content_similarity",
+  "association_rules",
+  "trending",
+  "recently_viewed",
+  "personalized_blend",
+]);
+
 export function isPlacementType(value: string): value is PlacementType {
   return PLACEMENT_TYPES.has(value);
 }
 
+export function isRecommendationStrategy(
+  value: string,
+): value is RecommendationStrategy {
+  return STRATEGIES.has(value);
+}
+
 /** Normalize Shopify GID or numeric ID to the numeric string stored in DB. */
-export function normalizeShopifyProductId(raw: string): string {
+export function normalizeShopifyId(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) return trimmed;
   if (trimmed.includes("/")) {
     return trimmed.split("/").pop() ?? trimmed;
   }
   return trimmed;
+}
+
+/** @deprecated Prefer normalizeShopifyId — kept for existing call sites. */
+export function normalizeShopifyProductId(raw: string): string {
+  return normalizeShopifyId(raw);
+}
+
+/**
+ * Accept coarse placement_type or fine-grained placement_key values from the widget.
+ */
+export function resolvePlacementTypeParam(
+  placementTypeRaw: string,
+): PlacementType | null {
+  if (isPlacementType(placementTypeRaw)) return placementTypeRaw;
+  return coercePlacementType(placementTypeRaw);
+}
+
+export function normalizePlacementKeyParam(
+  placementKeyRaw: string | null,
+  placementTypeRaw: string,
+): string | undefined {
+  if (placementKeyRaw && isPlacementKey(placementKeyRaw)) {
+    return placementKeyRaw;
+  }
+  if (isPlacementKey(placementTypeRaw)) {
+    return placementTypeRaw;
+  }
+  return undefined;
 }
 
 export function toShopifyProductGid(shopifyProductId: string): string {
@@ -32,7 +79,7 @@ export function parseCartProductIds(raw: string | null): string[] {
   if (!raw) return [];
   return raw
     .split(",")
-    .map((part) => normalizeShopifyProductId(part))
+    .map((part) => normalizeShopifyId(part))
     .filter(Boolean);
 }
 

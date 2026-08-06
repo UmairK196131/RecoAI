@@ -1,0 +1,36 @@
+{{ 'reco-widget.css' | asset_url | stylesheet_tag }}
+
+<div
+  id="RecoAI-{{ block.id }}"
+  class="recoai-block"
+  data-recoai-widget
+  data-shop="{{ shop.permanent_domain | escape }}"
+  data-api-url="{{ block.settings.api_url | escape }}"
+  data-placement-type="{{ placement_type | escape }}"
+  data-placement-key="{{ placement_key | escape }}"
+  data-strategy="{{ strategy | escape }}"
+  data-heading="{{ block.settings.heading | escape }}"
+  data-item-count="{{ block.settings.item_count }}"
+  data-layout="{{ block.settings.layout | escape }}"
+  data-columns="{{ block.settings.columns }}"
+  data-show-price="{% if block.settings.show_price %}true{% else %}false{% endif %}"
+  data-show-atc="{% if block.settings.show_atc %}true{% else %}false{% endif %}"
+  data-money-format="{{ shop.money_format | escape }}"
+  data-product-id="{% if product %}{{ product.id }}{% endif %}"
+  data-collection-id="{% if collection %}{{ collection.id }}{% endif %}"
+  data-search-query="{{ search.terms | default: '' | escape }}"
+  data-search-results-count="{% if search %}{{ search.results_count }}{% else %}{% endif %}"
+  data-page-type="{{ request.page_type | escape }}"
+  hidden
+  {{ block.shopify_attributes }}
+>
+  <div class="recoai-block__inner">
+    <h2 class="recoai-block__heading">{{ block.settings.heading | escape }}</h2>
+    <div class="recoai-block__content" data-recoai-content></div>
+  </div>
+</div>
+
+{% unless recoai_widget_assets %}
+  {% assign recoai_widget_assets = true %}
+  <script src="{{ 'reco-widget.js' | asset_url }}" defer></script>
+{% endunless %}

@@ -1,0 +1,80 @@
+{% comment %}
+  Home page — Trending now.
+  Add in Theme Editor → Home page → Add section/block → RecoAI: Trending now
+{% endcomment %}
+{% render 'reco-widget-root',
+  block: block,
+  placement_type: 'home',
+  placement_key: 'home_trending',
+  strategy: 'trending'
+%}
+
+{% schema %}
+{
+  "name": "t:home_trending.name",
+  "target": "section",
+  "templates": ["index"],
+  "stylesheet": "reco-widget.css",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "t:home_trending.info"
+    },
+    {
+      "type": "text",
+      "id": "api_url",
+      "label": "t:shared.settings.api_url.label",
+      "info": "t:shared.settings.api_url.info"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:shared.settings.heading.label",
+      "default": "Trending now"
+    },
+    {
+      "type": "range",
+      "id": "item_count",
+      "min": 1,
+      "max": 12,
+      "step": 1,
+      "label": "t:shared.settings.item_count.label",
+      "default": 8
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "t:shared.settings.layout.label",
+      "options": [
+        { "value": "grid", "label": "t:shared.settings.layout.options.grid" },
+        { "value": "carousel", "label": "t:shared.settings.layout.options.carousel" }
+      ],
+      "default": "grid"
+    },
+    {
+      "type": "select",
+      "id": "columns",
+      "label": "t:shared.settings.columns.label",
+      "info": "t:shared.settings.columns.info",
+      "options": [
+        { "value": "2", "label": "2" },
+        { "value": "3", "label": "3" },
+        { "value": "4", "label": "4" }
+      ],
+      "default": "4"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_price",
+      "label": "t:shared.settings.show_price.label",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_atc",
+      "label": "t:shared.settings.show_atc.label",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

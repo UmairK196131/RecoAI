@@ -1,0 +1,80 @@
+{% comment %}
+  Product page — You may also like (content similarity default).
+  Add in Theme Editor → Product pages → Add block → RecoAI: You may also like
+{% endcomment %}
+{% render 'reco-widget-root',
+  block: block,
+  placement_type: 'product_page',
+  placement_key: 'product_you_may_also_like',
+  strategy: 'content_similarity'
+%}
+
+{% schema %}
+{
+  "name": "t:product_ymal.name",
+  "target": "section",
+  "templates": ["product"],
+  "stylesheet": "reco-widget.css",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "t:product_ymal.info"
+    },
+    {
+      "type": "text",
+      "id": "api_url",
+      "label": "t:shared.settings.api_url.label",
+      "info": "t:shared.settings.api_url.info"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:shared.settings.heading.label",
+      "default": "You may also like"
+    },
+    {
+      "type": "range",
+      "id": "item_count",
+      "min": 1,
+      "max": 12,
+      "step": 1,
+      "label": "t:shared.settings.item_count.label",
+      "default": 4
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "t:shared.settings.layout.label",
+      "options": [
+        { "value": "grid", "label": "t:shared.settings.layout.options.grid" },
+        { "value": "carousel", "label": "t:shared.settings.layout.options.carousel" }
+      ],
+      "default": "grid"
+    },
+    {
+      "type": "select",
+      "id": "columns",
+      "label": "t:shared.settings.columns.label",
+      "info": "t:shared.settings.columns.info",
+      "options": [
+        { "value": "2", "label": "2" },
+        { "value": "3", "label": "3" },
+        { "value": "4", "label": "4" }
+      ],
+      "default": "4"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_price",
+      "label": "t:shared.settings.show_price.label",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_atc",
+      "label": "t:shared.settings.show_atc.label",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

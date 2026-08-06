@@ -23,8 +23,19 @@ export interface ExclusionRules {
 export interface ServingRequest {
   shop: string;
   placementType: PlacementType;
+  /**
+   * Fine-grained placement key (FR-REC-05), e.g. product_you_may_also_like.
+   * Drives default strategy/title when merchant config is absent.
+   */
+  placementKey?: string;
+  /** Optional strategy override from the storefront block. */
+  strategy?: RecommendationStrategy;
   /** Shopify product ID (numeric or GID). */
   productId?: string;
+  /** Shopify collection ID (numeric or GID) for collection placements. */
+  collectionId?: string;
+  /** Search terms for search-results placements. */
+  searchQuery?: string;
   sessionId?: string;
   /** Shopify product IDs currently in the cart. */
   cartProductIds?: string[];

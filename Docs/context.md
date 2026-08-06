@@ -98,6 +98,7 @@ Shopify Webhooks ─────────────► Sync/Webhook Worker 
 
 | File | Purpose |
 |---|---|
+| `docs/theme-editor-placements.md` | Where to add each RecoAI block in the Theme Editor (Dawn) |
 | `Docs/SRS_Shopify_AI_Recommendations_App.md` | Full SRS with requirement IDs (FR-*, NFR-*) |
 | `docs/tech-stack.md` | Technology choices and conventions |
 | `docs/uiux.md` | Admin UI and storefront widget design specs |

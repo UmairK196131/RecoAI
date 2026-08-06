@@ -97,4 +97,19 @@ describe("selectStrategies", () => {
 
     expect(selection.strategies).toEqual(["recently_viewed"]);
   });
+
+  it("honors placement strategy override over cold-start heuristics", () => {
+    process.env.COLD_START_ORDER_THRESHOLD = "50";
+    process.env.COLD_START_PRODUCT_INTERACTION_THRESHOLD = "1";
+
+    const selection = selectStrategies({
+      shopId: "shop",
+      productId: "p1",
+      orderCount: 0,
+      productInteractionCount: 0,
+      requestedStrategy: "association_rules",
+    });
+
+    expect(selection.strategies).toEqual(["association_rules"]);
+  });
 });

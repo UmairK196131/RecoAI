@@ -1,36 +1,35 @@
-{{ 'reco-widget.css' | asset_url | stylesheet_tag }}
+{% comment %}
+  Generic RecoAI recommendations block — choose placement type manually.
+  Prefer the page-specific blocks (You may also like, Trending now, etc.) when available.
+{% endcomment %}
+{% assign placement = block.settings.placement_type | default: 'product_page' %}
+{% case placement %}
+  {% when 'product_page' %}
+    {% assign placement_key = 'product_you_may_also_like' %}
+    {% assign strategy = 'content_similarity' %}
+  {% when 'cart' %}
+    {% assign placement_key = 'cart' %}
+    {% assign strategy = 'association_rules' %}
+  {% when 'home' %}
+    {% assign placement_key = 'home_trending' %}
+    {% assign strategy = 'trending' %}
+  {% when 'collection' %}
+    {% assign placement_key = 'collection' %}
+    {% assign strategy = 'content_similarity' %}
+  {% when 'search' %}
+    {% assign placement_key = 'search' %}
+    {% assign strategy = 'trending' %}
+  {% else %}
+    {% assign placement_key = placement %}
+    {% assign strategy = 'trending' %}
+{% endcase %}
 
-<div
-  id="RecoAI-{{ block.id }}"
-  class="recoai-block"
-  data-recoai-widget
-  data-shop="{{ shop.permanent_domain | escape }}"
-  data-api-url="{{ block.settings.api_url | escape }}"
-  data-placement-type="{{ block.settings.placement_type | escape }}"
-  data-heading="{{ block.settings.heading | escape }}"
-  data-item-count="{{ block.settings.item_count }}"
-  data-layout="{{ block.settings.layout | escape }}"
-  data-columns="{{ block.settings.columns }}"
-  data-show-price="{% if block.settings.show_price %}true{% else %}false{% endif %}"
-  data-show-atc="{% if block.settings.show_atc %}true{% else %}false{% endif %}"
-  data-money-format="{{ shop.money_format | escape }}"
-  data-product-id="{% if product %}{{ product.id }}{% endif %}"
-  data-collection-id="{% if collection %}{{ collection.id }}{% endif %}"
-  data-search-query="{{ search.terms | default: '' | escape }}"
-  data-page-type="{{ request.page_type | escape }}"
-  hidden
-  {{ block.shopify_attributes }}
->
-  <div class="recoai-block__inner">
-    <h2 class="recoai-block__heading">{{ block.settings.heading | escape }}</h2>
-    <div class="recoai-block__content" data-recoai-content></div>
-  </div>
-</div>
-
-{% unless recoai_widget_assets %}
-  {% assign recoai_widget_assets = true %}
-  <script src="{{ 'reco-widget.js' | asset_url }}" defer></script>
-{% endunless %}
+{% render 'reco-widget-root',
+  block: block,
+  placement_type: placement,
+  placement_key: placement_key,
+  strategy: strategy
+%}
 
 {% schema %}
 {
@@ -39,15 +38,19 @@
   "stylesheet": "reco-widget.css",
   "settings": [
     {
+      "type": "paragraph",
+      "content": "t:recommendation_widget.info"
+    },
+    {
       "type": "text",
       "id": "api_url",
-      "label": "t:recommendation_widget.settings.api_url.label",
-      "info": "t:recommendation_widget.settings.api_url.info"
+      "label": "t:shared.settings.api_url.label",
+      "info": "t:shared.settings.api_url.info"
     },
     {
       "type": "text",
       "id": "heading",
-      "label": "t:recommendation_widget.settings.heading.label",
+      "label": "t:shared.settings.heading.label",
       "default": "You may also like"
     },
     {
@@ -56,21 +59,21 @@
       "min": 1,
       "max": 12,
       "step": 1,
-      "label": "t:recommendation_widget.settings.item_count.label",
+      "label": "t:shared.settings.item_count.label",
       "default": 4
     },
     {
       "type": "select",
       "id": "layout",
-      "label": "t:recommendation_widget.settings.layout.label",
+      "label": "t:shared.settings.layout.label",
       "options": [
         {
           "value": "grid",
-          "label": "t:recommendation_widget.settings.layout.options.grid"
+          "label": "t:shared.settings.layout.options.grid"
         },
         {
           "value": "carousel",
-          "label": "t:recommendation_widget.settings.layout.options.carousel"
+          "label": "t:shared.settings.layout.options.carousel"
         }
       ],
       "default": "grid"
@@ -78,21 +81,12 @@
     {
       "type": "select",
       "id": "columns",
-      "label": "t:recommendation_widget.settings.columns.label",
-      "info": "t:recommendation_widget.settings.columns.info",
+      "label": "t:shared.settings.columns.label",
+      "info": "t:shared.settings.columns.info",
       "options": [
-        {
-          "value": "2",
-          "label": "2"
-        },
-        {
-          "value": "3",
-          "label": "3"
-        },
-        {
-          "value": "4",
-          "label": "4"
-        }
+        { "value": "2", "label": "2" },
+        { "value": "3", "label": "3" },
+        { "value": "4", "label": "4" }
       ],
       "default": "4"
     },
@@ -127,13 +121,13 @@
     {
       "type": "checkbox",
       "id": "show_price",
-      "label": "t:recommendation_widget.settings.show_price.label",
+      "label": "t:shared.settings.show_price.label",
       "default": true
     },
     {
       "type": "checkbox",
       "id": "show_atc",
-      "label": "t:recommendation_widget.settings.show_atc.label",
+      "label": "t:shared.settings.show_atc.label",
       "default": false
     }
   ]

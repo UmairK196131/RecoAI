@@ -1,0 +1,93 @@
+{% comment %}
+  Search results — fallback recommendations when results are low or empty.
+  Add in Theme Editor → Search → Add block → RecoAI: Search recommendations
+{% endcomment %}
+{% assign low_threshold = block.settings.low_results_threshold | default: 4 %}
+{% if search.results_count <= low_threshold %}
+  {% render 'reco-widget-root',
+    block: block,
+    placement_type: 'search',
+    placement_key: 'search',
+    strategy: 'trending'
+  %}
+{% endif %}
+
+{% schema %}
+{
+  "name": "t:search_reco.name",
+  "target": "section",
+  "templates": ["search"],
+  "stylesheet": "reco-widget.css",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "t:search_reco.info"
+    },
+    {
+      "type": "text",
+      "id": "api_url",
+      "label": "t:shared.settings.api_url.label",
+      "info": "t:shared.settings.api_url.info"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:shared.settings.heading.label",
+      "default": "Popular picks"
+    },
+    {
+      "type": "range",
+      "id": "low_results_threshold",
+      "min": 0,
+      "max": 12,
+      "step": 1,
+      "label": "t:search_reco.settings.low_results_threshold.label",
+      "info": "t:search_reco.settings.low_results_threshold.info",
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "item_count",
+      "min": 1,
+      "max": 12,
+      "step": 1,
+      "label": "t:shared.settings.item_count.label",
+      "default": 4
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "t:shared.settings.layout.label",
+      "options": [
+        { "value": "grid", "label": "t:shared.settings.layout.options.grid" },
+        { "value": "carousel", "label": "t:shared.settings.layout.options.carousel" }
+      ],
+      "default": "grid"
+    },
+    {
+      "type": "select",
+      "id": "columns",
+      "label": "t:shared.settings.columns.label",
+      "info": "t:shared.settings.columns.info",
+      "options": [
+        { "value": "2", "label": "2" },
+        { "value": "3", "label": "3" },
+        { "value": "4", "label": "4" }
+      ],
+      "default": "4"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_price",
+      "label": "t:shared.settings.show_price.label",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_atc",
+      "label": "t:shared.settings.show_atc.label",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

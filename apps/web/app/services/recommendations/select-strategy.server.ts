@@ -67,6 +67,15 @@ export function selectStrategies(
     };
   }
 
+  // Placement / merchant strategy wins; CF & association still fall back inside runStrategy
+  if (context.requestedStrategy) {
+    return {
+      scenario: "none",
+      strategies: [context.requestedStrategy],
+      reason: `Using requested strategy ${context.requestedStrategy}`,
+    };
+  }
+
   // New product: content similarity immediately (SRS 5.2)
   if (
     context.productId &&
@@ -105,14 +114,6 @@ export function selectStrategies(
       reason: context.customerId
         ? `Session has ${sessionEvents} events (< ${sessionThreshold})`
         : "Anonymous shopper with thin session history",
-    };
-  }
-
-  if (context.requestedStrategy) {
-    return {
-      scenario: "none",
-      strategies: [context.requestedStrategy],
-      reason: `Using requested strategy ${context.requestedStrategy}`,
     };
   }
 

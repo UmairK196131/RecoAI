@@ -27,6 +27,8 @@
     "test:sprint-9": "dotenv -e .env -- npx tsx apps/web/scripts/test-sprint-9.ts",
     "test:sprint-10": "dotenv -e .env -- npx tsx apps/web/scripts/test-sprint-10.ts",
     "test:sprint-11": "dotenv -e .env -- npx tsx apps/web/scripts/test-sprint-11.ts",
+    "test:sprint-12": "dotenv -e .env -- npx tsx apps/web/scripts/test-sprint-12.ts",
+    "test:sprint-13": "dotenv -e .env -- npx tsx apps/web/scripts/test-sprint-13.ts",
     "test:unit": "npm run test:unit --workspace=apps/web",
     "shopify": "shopify"
   },

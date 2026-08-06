@@ -95,14 +95,26 @@
     if (!apiBase || !shop) return null;
 
     var placement = root.getAttribute("data-placement-type") || "product_page";
-    var itemCount = root.getAttribute("data-item-count") || "4";
+    var placementKey = root.getAttribute("data-placement-key") || "";
+    var strategy = root.getAttribute("data-strategy") || "";
     var productId = root.getAttribute("data-product-id") || "";
+    var collectionId = root.getAttribute("data-collection-id") || "";
+    var searchQuery = root.getAttribute("data-search-query") || "";
     var sessionId = getSessionId();
+
+    // Cart: seed association rules from first cart line when product context is missing
+    if (!productId && cartProductIds && cartProductIds.length) {
+      productId = cartProductIds[0];
+    }
 
     var url = new URL(apiBase + "/api/recommendations");
     url.searchParams.set("shop", shop);
     url.searchParams.set("placement_type", placement);
+    if (placementKey) url.searchParams.set("placement_key", placementKey);
+    if (strategy) url.searchParams.set("strategy", strategy);
     if (productId) url.searchParams.set("product_id", productId);
+    if (collectionId) url.searchParams.set("collection_id", collectionId);
+    if (searchQuery) url.searchParams.set("search_query", searchQuery);
     if (sessionId) url.searchParams.set("session_id", sessionId);
     if (cartProductIds && cartProductIds.length) {
       url.searchParams.set("cart_product_ids", cartProductIds.join(","));
@@ -390,6 +402,8 @@
       });
     }
 
+    // Always load cart IDs for cart placement; also helpful for other pages that
+    // want to exclude in-cart products when the shopper has items.
     if (placement === "cart") {
       parseCartProductIds(onCartIds);
     } else {
