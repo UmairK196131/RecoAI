@@ -2,6 +2,7 @@ export type SyncJobName =
   | "full-catalog-sync"
   | "product-upsert"
   | "product-delete"
+  | "product-embed"
   | "collection-upsert"
   | "inventory-update"
   | "order-upsert"
@@ -10,6 +11,7 @@ export type SyncJobName =
   | "gdpr-customer-redact"
   | "gdpr-shop-redact"
   | "nightly-reconciliation"
+  | "nightly-reembed"
   | "shop-purge";
 
 export interface FullCatalogSyncJobData {
@@ -28,6 +30,12 @@ export interface ProductDeleteJobData {
   shopDomain: string;
   shopId: string;
   shopifyProductId: string;
+}
+
+export interface ProductEmbedJobData {
+  shopDomain: string;
+  shopId: string;
+  productId: string;
 }
 
 export interface CollectionUpsertJobData {
@@ -79,6 +87,7 @@ export type SyncJobData =
   | FullCatalogSyncJobData
   | ProductUpsertJobData
   | ProductDeleteJobData
+  | ProductEmbedJobData
   | CollectionUpsertJobData
   | InventoryUpdateJobData
   | OrderUpsertJobData

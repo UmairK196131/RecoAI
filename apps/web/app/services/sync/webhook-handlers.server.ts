@@ -16,6 +16,8 @@ import {
   handleCustomerRedact,
   handleShopRedact,
 } from "./gdpr.server";
+import { generateAndStoreProductEmbedding } from "../embeddings/generate.server";
+import { enqueueProductEmbed } from "./enqueue.server";
 import type {
   CollectionUpsertJobData,
   CustomerUpsertJobData,
@@ -25,22 +27,38 @@ import type {
   InventoryUpdateJobData,
   OrderUpsertJobData,
   ProductDeleteJobData,
+  ProductEmbedJobData,
   ProductUpsertJobData,
 } from "./types";
 
 export async function handleProductUpsert(data: ProductUpsertJobData) {
   const { shopId, shopDomain, shopifyProductId, payload } = data;
 
+  let product;
   if (payload && typeof payload.id !== "undefined") {
-    return upsertProductFromRestPayload(
+    product = await upsertProductFromRestPayload(
       shopId,
       payload as unknown as Parameters<typeof upsertProductFromRestPayload>[1],
       shopDomain,
     );
+  } else {
+    const client = await getAdminGraphqlClient(shopDomain);
+    product = await fetchAndUpsertProduct(shopId, shopDomain, shopifyProductId, client);
   }
 
-  const client = await getAdminGraphqlClient(shopDomain);
-  return fetchAndUpsertProduct(shopId, shopDomain, shopifyProductId, client);
+  if (product) {
+    await enqueueProductEmbed({
+      shopId,
+      shopDomain,
+      productId: product.id,
+    });
+  }
+
+  return product;
+}
+
+export async function handleProductEmbed(data: ProductEmbedJobData) {
+  return generateAndStoreProductEmbedding(data.shopId, data.productId, data.shopDomain);
 }
 
 export async function handleProductDelete(data: ProductDeleteJobData) {

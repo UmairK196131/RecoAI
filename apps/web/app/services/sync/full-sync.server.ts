@@ -4,6 +4,7 @@ import { getAdminGraphqlClient } from "./admin-client.server";
 import { graphqlRequest } from "./graphql-client.server";
 import { upsertCollectionFromNode, type ShopifyCollectionNode } from "./collection-sync.server";
 import { upsertProductFromNode, type ShopifyProductNode } from "./product-sync.server";
+import { enqueueProductEmbed } from "./enqueue.server";
 
 const PRODUCTS_QUERY = `#graphql
   query Products($cursor: String) {
@@ -109,7 +110,12 @@ export async function runFullCatalogSync(shopId: string, shopDomain: string) {
       );
 
       for (const edge of data.products.edges) {
-        await upsertProductFromNode(shopId, edge.node, shopDomain);
+        const product = await upsertProductFromNode(shopId, edge.node, shopDomain);
+        await enqueueProductEmbed({
+          shopId,
+          shopDomain,
+          productId: product.id,
+        });
         productCount++;
       }
 

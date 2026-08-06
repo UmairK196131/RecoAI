@@ -1,6 +1,7 @@
 import { Worker, type Job } from "bullmq";
 import { getRedisConnectionOptions, SYNC_QUEUE_NAME } from "../queue.server";
 import { logSyncEvent } from "../logger.server";
+import { runNightlyReembedding } from "../embeddings/reembed.server";
 import { runFullCatalogSync } from "./full-sync.server";
 import { runNightlyReconciliation } from "./reconciliation.server";
 import { runScheduledShopPurge } from "./purge.server";
@@ -15,6 +16,7 @@ import type {
   InventoryUpdateJobData,
   OrderUpsertJobData,
   ProductDeleteJobData,
+  ProductEmbedJobData,
   ProductUpsertJobData,
   SyncJobName,
 } from "./types";
@@ -27,6 +29,7 @@ import {
   handleInventoryUpdate,
   handleOrderUpsert,
   handleProductDelete,
+  handleProductEmbed,
   handleProductUpsert,
 } from "./webhook-handlers.server";
 
@@ -55,6 +58,8 @@ async function processJob(job: Job) {
       return handleProductUpsert(job.data as ProductUpsertJobData);
     case "product-delete":
       return handleProductDelete(job.data as ProductDeleteJobData);
+    case "product-embed":
+      return handleProductEmbed(job.data as ProductEmbedJobData);
     case "collection-upsert":
       return handleCollectionUpsert(job.data as CollectionUpsertJobData);
     case "inventory-update":
@@ -71,6 +76,8 @@ async function processJob(job: Job) {
       return handleGdprShopRedact(job.data as GdprShopRedactJobData);
     case "nightly-reconciliation":
       return runNightlyReconciliation();
+    case "nightly-reembed":
+      return runNightlyReembedding();
     case "shop-purge":
       return runScheduledShopPurge();
     default:

@@ -9,6 +9,7 @@ import type {
   InventoryUpdateJobData,
   OrderUpsertJobData,
   ProductDeleteJobData,
+  ProductEmbedJobData,
   ProductUpsertJobData,
   SyncJobName,
 } from "./types";
@@ -35,6 +36,13 @@ export async function enqueueProductDelete(data: ProductDeleteJobData) {
   const queue = getSyncQueue();
   await queue.add("product-delete", data, {
     jobId: jobId("product-delete", `${data.shopId}:${data.shopifyProductId}`),
+  });
+}
+
+export async function enqueueProductEmbed(data: ProductEmbedJobData) {
+  const queue = getSyncQueue();
+  await queue.add("product-embed", data, {
+    jobId: jobId("product-embed", `${data.shopId}:${data.productId}`),
   });
 }
 
@@ -100,6 +108,13 @@ export async function enqueueNightlyReconciliation() {
   const queue = getSyncQueue();
   await queue.add("nightly-reconciliation", {}, {
     jobId: jobId("nightly-reconciliation", String(Date.now())),
+  });
+}
+
+export async function enqueueNightlyReembed() {
+  const queue = getSyncQueue();
+  await queue.add("nightly-reembed", {}, {
+    jobId: jobId("nightly-reembed", String(Date.now())),
   });
 }
 

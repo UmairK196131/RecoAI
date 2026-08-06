@@ -8,6 +8,7 @@ declare global {
 }
 
 const NIGHTLY_RECONCILIATION_CRON = "0 2 * * *";
+const NIGHTLY_REEMBED_CRON = "0 3 * * *";
 const SHOP_PURGE_CRON = "0 * * * *";
 
 export async function ensureCronJobsScheduled() {
@@ -29,6 +30,15 @@ export async function ensureCronJobsScheduled() {
   );
 
   await queue.add(
+    "nightly-reembed",
+    {},
+    {
+      repeat: { pattern: NIGHTLY_REEMBED_CRON },
+      jobId: "cron-nightly-reembed",
+    } as JobsOptions,
+  );
+
+  await queue.add(
     "shop-purge",
     {},
     {
@@ -40,6 +50,7 @@ export async function ensureCronJobsScheduled() {
   logSyncEvent({
     event: "cron_jobs_scheduled",
     nightlyReconciliation: NIGHTLY_RECONCILIATION_CRON,
+    nightlyReembed: NIGHTLY_REEMBED_CRON,
     shopPurge: SHOP_PURGE_CRON,
   });
 }
