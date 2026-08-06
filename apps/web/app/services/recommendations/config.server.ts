@@ -110,3 +110,13 @@ export function getAssociationMinLift(): number {
 export function getCfCacheTtlSec(): number {
   return parsePositiveInt(process.env.CF_CACHE_TTL_SEC, 24 * 60 * 60);
 }
+
+/** Redis TTL for serving API recommendation results (seconds). FR-REC-06. */
+export function getServingCacheTtlSec(): number {
+  return parsePositiveInt(process.env.SERVING_CACHE_TTL_SEC, 5 * 60);
+}
+
+/** Soft boost applied to products viewed in the current session (FR-REC-07). */
+export function getSessionRerankBoost(): number {
+  return parsePositiveFloat(process.env.SESSION_RERANK_BOOST, 0.15);
+}

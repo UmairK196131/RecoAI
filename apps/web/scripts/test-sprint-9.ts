@@ -86,7 +86,7 @@ async function setupShopCatalog() {
 
 async function seedOrdersAndViews(
   shopId: string,
-  products: Array<{ id: string; shopifyProductId: string }>,
+  products: Array<{ id: string; shopifyProductId: string; title: string }>,
 ) {
   // Hot product: many units sold + views
   await db.order.create({

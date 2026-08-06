@@ -1,4 +1,4 @@
-import type { OrderLineItem } from "../sync/order-sync.server";
+import type { OrderLineItem } from "../../sync/order-sync.server";
 
 export interface ProductSignalInput {
   productId: string;
