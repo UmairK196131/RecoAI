@@ -57,3 +57,56 @@ export function getTrendingSignalWeights() {
 export function getTrendingCacheTtlSec(): number {
   return parsePositiveInt(process.env.TRENDING_CACHE_TTL_SEC, 3 * 60 * 60);
 }
+
+/** Minimum orders before CF / association strategies activate (SRS 5.2). */
+export function getCfMinOrderThreshold(): number {
+  return parsePositiveInt(
+    process.env.CF_MIN_ORDER_THRESHOLD ?? process.env.COLD_START_ORDER_THRESHOLD,
+    50,
+  );
+}
+
+/** Minimum co-occurrence count to keep a CF pair. */
+export function getCfMinCoOccurrence(): number {
+  return parsePositiveInt(process.env.CF_MIN_CO_OCCURRENCE, 2);
+}
+
+/** Max neighbors stored per source product for CF. */
+export function getCfMaxNeighbors(): number {
+  return parsePositiveInt(process.env.CF_MAX_NEIGHBORS, 50);
+}
+
+/** BullMQ cron: CF incremental daily (default 04:00 UTC). */
+export function getCfIncrementalJobCron(): string {
+  return process.env.CF_INCREMENTAL_JOB_CRON?.trim() || "0 4 * * *";
+}
+
+/** BullMQ cron: CF full weekly retrain (default Sunday 05:00 UTC). */
+export function getCfFullJobCron(): string {
+  return process.env.CF_FULL_JOB_CRON?.trim() || "0 5 * * 0";
+}
+
+/** BullMQ cron: association rules daily (default 04:30 UTC). */
+export function getAssociationRulesJobCron(): string {
+  return process.env.ASSOCIATION_RULES_JOB_CRON?.trim() || "30 4 * * *";
+}
+
+/** Apriori minimum support (fraction of multi-item baskets). */
+export function getAssociationMinSupport(): number {
+  return parsePositiveFloat(process.env.ASSOCIATION_MIN_SUPPORT, 0.02);
+}
+
+/** Apriori minimum confidence. */
+export function getAssociationMinConfidence(): number {
+  return parsePositiveFloat(process.env.ASSOCIATION_MIN_CONFIDENCE, 0.1);
+}
+
+/** Apriori minimum lift. */
+export function getAssociationMinLift(): number {
+  return parsePositiveFloat(process.env.ASSOCIATION_MIN_LIFT, 1.0);
+}
+
+/** Redis TTL for CF / association caches (seconds). */
+export function getCfCacheTtlSec(): number {
+  return parsePositiveInt(process.env.CF_CACHE_TTL_SEC, 24 * 60 * 60);
+}

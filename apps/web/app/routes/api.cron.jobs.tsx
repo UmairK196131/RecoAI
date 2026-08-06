@@ -1,6 +1,9 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
+  enqueueAssociationRules,
+  enqueueCfFull,
+  enqueueCfIncremental,
   enqueueNightlyReconciliation,
   enqueueNightlyReembed,
   enqueueShopPurge,
@@ -49,6 +52,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (job === "trending") {
     await enqueueTrendingScores();
     return json({ ok: true, job: "trending-scores" });
+  }
+
+  if (job === "cf-incremental") {
+    await enqueueCfIncremental();
+    return json({ ok: true, job: "cf-incremental" });
+  }
+
+  if (job === "cf-full") {
+    await enqueueCfFull();
+    return json({ ok: true, job: "cf-full" });
+  }
+
+  if (job === "association-rules" || job === "association") {
+    await enqueueAssociationRules();
+    return json({ ok: true, job: "association-rules" });
   }
 
   await enqueueNightlyReconciliation();

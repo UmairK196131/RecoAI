@@ -13,6 +13,9 @@ export type SyncJobName =
   | "nightly-reconciliation"
   | "nightly-reembed"
   | "trending-scores"
+  | "cf-incremental"
+  | "cf-full"
+  | "association-rules"
   | "shop-purge";
 
 export interface FullCatalogSyncJobData {

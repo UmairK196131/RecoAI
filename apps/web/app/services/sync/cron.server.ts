@@ -1,7 +1,12 @@
 import type { JobsOptions } from "bullmq";
 import { getSyncQueue } from "../queue.server";
 import { logSyncEvent } from "../logger.server";
-import { getTrendingJobCron } from "../recommendations/config.server";
+import {
+  getAssociationRulesJobCron,
+  getCfFullJobCron,
+  getCfIncrementalJobCron,
+  getTrendingJobCron,
+} from "../recommendations/config.server";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -21,6 +26,9 @@ export async function ensureCronJobsScheduled() {
 
   const queue = getSyncQueue();
   const trendingCron = getTrendingJobCron();
+  const cfIncrementalCron = getCfIncrementalJobCron();
+  const cfFullCron = getCfFullJobCron();
+  const associationCron = getAssociationRulesJobCron();
 
   await queue.add(
     "nightly-reconciliation",
@@ -50,6 +58,33 @@ export async function ensureCronJobsScheduled() {
   );
 
   await queue.add(
+    "cf-incremental",
+    {},
+    {
+      repeat: { pattern: cfIncrementalCron },
+      jobId: "cron-cf-incremental",
+    } as JobsOptions,
+  );
+
+  await queue.add(
+    "cf-full",
+    {},
+    {
+      repeat: { pattern: cfFullCron },
+      jobId: "cron-cf-full",
+    } as JobsOptions,
+  );
+
+  await queue.add(
+    "association-rules",
+    {},
+    {
+      repeat: { pattern: associationCron },
+      jobId: "cron-association-rules",
+    } as JobsOptions,
+  );
+
+  await queue.add(
     "shop-purge",
     {},
     {
@@ -63,6 +98,9 @@ export async function ensureCronJobsScheduled() {
     nightlyReconciliation: NIGHTLY_RECONCILIATION_CRON,
     nightlyReembed: NIGHTLY_REEMBED_CRON,
     trendingScores: trendingCron,
+    cfIncremental: cfIncrementalCron,
+    cfFull: cfFullCron,
+    associationRules: associationCron,
     shopPurge: SHOP_PURGE_CRON,
   });
 }

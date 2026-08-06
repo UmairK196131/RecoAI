@@ -1,3 +1,5 @@
+import { getAssociationRuleRecommendations } from "./strategies/association-rules.server";
+import { getCollaborativeFilteringRecommendations } from "./strategies/collaborative-filtering.server";
 import { getContentSimilarityRecommendations } from "./strategies/content-similarity.server";
 import { getRecentlyViewedRecommendations } from "./strategies/recently-viewed.server";
 import {
@@ -13,12 +15,32 @@ import {
 
 export type { RecommendationItem, RecommendationRequest } from "./types";
 export { selectStrategies, selectStrategiesForRequest } from "./select-strategy.server";
+export { getAssociationRuleRecommendations } from "./strategies/association-rules.server";
+export { getCollaborativeFilteringRecommendations } from "./strategies/collaborative-filtering.server";
 export { getContentSimilarityRecommendations } from "./strategies/content-similarity.server";
 export { getRecentlyViewedRecommendations } from "./strategies/recently-viewed.server";
 export {
   getBestSellerRecommendations,
   getTrendingRecommendations,
 } from "./strategies/trending.server";
+
+/**
+ * Cold-start / empty-result fallback for CF and association rules:
+ * content similarity (when product context exists) + trending.
+ */
+async function fallbackContentOrTrending(
+  request: RecommendationRequest,
+): Promise<RecommendationItem[]> {
+  const limit = request.limit ?? 8;
+  if (request.productId) {
+    const [content, trending] = await Promise.all([
+      getContentSimilarityRecommendations(request),
+      getTrendingRecommendations(request),
+    ]);
+    return mergeRecommendationLists([content, trending], limit);
+  }
+  return getTrendingRecommendations(request);
+}
 
 async function runStrategy(
   strategy: RecommendationRequest["strategy"] | "best_sellers",
@@ -33,8 +55,18 @@ async function runStrategy(
       return getBestSellerRecommendations(request);
     case "recently_viewed":
       return getRecentlyViewedRecommendations(request);
+    case "collaborative_filtering": {
+      const items = await getCollaborativeFilteringRecommendations(request);
+      if (items.length > 0) return items;
+      return fallbackContentOrTrending(request);
+    }
+    case "association_rules": {
+      const items = await getAssociationRuleRecommendations(request);
+      if (items.length > 0) return items;
+      return fallbackContentOrTrending(request);
+    }
     default:
-      // CF / association_rules / personalized_blend arrive in later sprints.
+      // personalized_blend arrives in a later sprint.
       return getTrendingRecommendations(request);
   }
 }

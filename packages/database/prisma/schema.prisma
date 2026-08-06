@@ -89,6 +89,9 @@ model Shop {
   recommendationLogs       RecommendationLog[]
   productEmbeddings        ProductEmbedding[]
   trendingScores           TrendingScore[]
+  coPurchaseScores         CoPurchaseScore[]
+  associationRules         AssociationRule[]
+  modelRegistryEntries     ModelRegistryEntry[]
   abTestExperiments        ABTestExperiment[]
 
   @@index([status])
@@ -133,6 +136,8 @@ model Product {
   behavioralEvents  BehavioralEvent[]
   embedding         ProductEmbedding?
   trendingScore     TrendingScore?
+  coPurchaseAsSource CoPurchaseScore[] @relation("CoPurchaseSource")
+  coPurchaseAsTarget CoPurchaseScore[] @relation("CoPurchaseTarget")
 
   @@unique([shopId, shopifyProductId])
   @@index([shopId])
@@ -340,6 +345,74 @@ model TrendingScore {
   @@index([shopId, score(sort: Desc)])
   @@index([shopId])
   @@map("trending_scores")
+}
+
+/// Item–item co-purchase scores for collaborative filtering (FR-REC-01a).
+model CoPurchaseScore {
+  id              String   @id @default(cuid())
+  shopId          String   @map("shop_id")
+  sourceProductId String   @map("source_product_id")
+  targetProductId String   @map("target_product_id")
+  coOccurrence    Int      @map("co_occurrence")
+  score           Float
+  modelVersion    String   @map("model_version")
+  computedAt      DateTime @default(now()) @map("computed_at")
+
+  shop           Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  sourceProduct  Product @relation("CoPurchaseSource", fields: [sourceProductId], references: [id], onDelete: Cascade)
+  targetProduct  Product @relation("CoPurchaseTarget", fields: [targetProductId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, sourceProductId, targetProductId])
+  @@index([shopId, sourceProductId, score(sort: Desc)])
+  @@index([shopId])
+  @@map("co_purchase_scores")
+}
+
+/// Market-basket association rules for "frequently bought together" (FR-REC-01c).
+model AssociationRule {
+  id                   String   @id @default(cuid())
+  shopId               String   @map("shop_id")
+  antecedentProductIds String[] @map("antecedent_product_ids")
+  consequentProductIds String[] @map("consequent_product_ids")
+  support              Float
+  confidence           Float
+  lift                 Float
+  modelVersion         String   @map("model_version")
+  computedAt           DateTime @default(now()) @map("computed_at")
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, confidence(sort: Desc)])
+  @@index([shopId])
+  @@map("association_rules")
+}
+
+enum ModelRegistryStatus {
+  active
+  archived
+  rolled_back
+
+  @@map("model_registry_status")
+}
+
+/// Versioned ML artifacts for rollback (NFR-MAINT-02).
+model ModelRegistryEntry {
+  id           String              @id @default(cuid())
+  shopId       String?             @map("shop_id")
+  modelType    String              @map("model_type")
+  version      String
+  status       ModelRegistryStatus @default(active)
+  metrics      Json                @default("{}")
+  artifactMeta Json                @default("{}") @map("artifact_meta")
+  trainedAt    DateTime            @map("trained_at")
+  activatedAt  DateTime?           @map("activated_at")
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  shop Shop? @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, modelType, status])
+  @@index([modelType, version])
+  @@map("model_registry")
 }
 
 enum ABTestStatus {

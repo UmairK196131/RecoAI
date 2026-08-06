@@ -125,6 +125,27 @@ export async function enqueueTrendingScores() {
   });
 }
 
+export async function enqueueCfIncremental() {
+  const queue = getSyncQueue();
+  await queue.add("cf-incremental", {}, {
+    jobId: jobId("cf-incremental", String(Date.now())),
+  });
+}
+
+export async function enqueueCfFull() {
+  const queue = getSyncQueue();
+  await queue.add("cf-full", {}, {
+    jobId: jobId("cf-full", String(Date.now())),
+  });
+}
+
+export async function enqueueAssociationRules() {
+  const queue = getSyncQueue();
+  await queue.add("association-rules", {}, {
+    jobId: jobId("association-rules", String(Date.now())),
+  });
+}
+
 export async function enqueueShopPurge() {
   const queue = getSyncQueue();
   await queue.add("shop-purge", {}, {
