@@ -7,7 +7,14 @@ module.exports = {
     "@remix-run/eslint-config/jest-testing-library",
     "prettier",
   ],
+  // Vitest is used (not Jest). Tell eslint-plugin-jest a version so CI
+  // doesn't crash with "Unable to detect Jest version".
+  settings: {
+    jest: {
+      version: 29,
+    },
+  },
   globals: {
-    shopify: "readonly"
+    shopify: "readonly",
   },
 };
